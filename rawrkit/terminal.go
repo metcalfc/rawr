@@ -40,12 +40,20 @@ func (m *Manager) ActivateTerminal(ctx context.Context, c Context, spec Terminal
 					return errors.New("managed terminal ID already has a different live command or context; use a new ID; existing work preserved")
 				}
 				if err = m.healthy(ctx, s, i, entry.Binding, inv); err != nil {
-					return err
+					// A deliberately quit viewer leaves an exited native surface.
+					// Create a fresh view while retaining that surface. A shell or
+					// any other live/unknown replacement must still fail closed.
+					b := inv[target]
+					p, probeErr := m.Rex.Process(ctx, c.Session, target)
+					if probeErr != nil || b.HostID != i.HostID || b.Label != entry.Binding.Label || p.Child != nil || p.Foreground != nil || len(p.LastExit) == 0 || string(p.LastExit) == "null" {
+						return err
+					}
+					exists = false
 				}
-				if target == s.MainBlock {
-					return nil
+				if exists && target == s.MainBlock {
+					return m.Rex.Call(ctx, "session.focus_block", map[string]any{"session_id": c.Session, "block_id": target}, nil)
 				}
-				if _, placed := live[target]; !placed {
+				if _, placed := live[target]; exists && !placed {
 					return errors.New("managed terminal was detached outside these controls; preserved")
 				}
 			} else {
@@ -115,7 +123,10 @@ func (m *Manager) ActivateTerminal(ctx context.Context, c Context, spec Terminal
 		s.Selected = spec.ID
 		s.Pending = nil
 		s.LastShape = shape(s, after)
-		return storage.WriteJSON(path, s)
+		if err = storage.WriteJSON(path, s); err != nil {
+			return err
+		}
+		return m.Rex.Call(ctx, "session.focus_block", map[string]any{"session_id": c.Session, "block_id": target}, nil)
 	})
 }
 

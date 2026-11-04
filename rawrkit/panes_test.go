@@ -26,6 +26,7 @@ type fakeNative struct {
 	calls     []string
 	seq       int
 	lostReply string
+	screen    string
 }
 
 func newFakeManager(t *testing.T) (*Manager, Context, *fakeNative) {
@@ -47,7 +48,7 @@ func newFakeManager(t *testing.T) (*Manager, Context, *fakeNative) {
 	c := rex.New("/tmp/rex executable ; $(literal)", "unix:/tmp/rex socket", "")
 	c.Runner = f.run
 	manager := New(c, filepath.Join(dir, "state"), bin,
-		Definition{ID: "ghrawr", Aliases: []string{"ghrex"}},
+		Definition{ID: "ghrawr", Aliases: []string{"ghrex"}, Placement: PlacementSpec{Direction: "vertical", Side: "before", Ratio: .5, AnchorApp: "exerawr"}},
 		Definition{ID: "filerawr", Aliases: []string{"filerex"}, Placement: PlacementSpec{Direction: "horizontal", Side: "before", Ratio: .2, WholeLayer: true}},
 		Definition{ID: "exerawr", Aliases: []string{"exerex"}, Placement: PlacementSpec{Direction: "vertical", Side: "after", Ratio: .5, AnchorApp: "ghrawr"}})
 
@@ -96,6 +97,14 @@ func (f *fakeNative) run(_ context.Context, _ string, argv []string) ([]byte, []
 				if argv[k] == "-b" {
 					bid = argv[k+1]
 				}
+			}
+			if argv[len(argv)-1] == "modes" {
+				f.calls = append(f.calls, "block.modes")
+				screen := f.screen
+				if screen == "" {
+					screen = "primary"
+				}
+				return encode(map[string]any{"screen": screen, "modes": []any{}}), nil, nil
 			}
 			f.calls = append(f.calls, "block.process")
 			p, ok := f.processes[bid]

@@ -1,4 +1,4 @@
-// Package services provides bounded, read-only adapters for the standalone apps.
+// Package services provides bounded adapters for the standalone apps.
 // Every subprocess uses literal argv; no service controls VM lifecycle or copies credentials.
 package services
 
@@ -14,7 +14,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
-	"strconv"
 	"strings"
 	"time"
 	"unicode"
@@ -201,88 +200,6 @@ func parseArray(raw, label string) ([]json.RawMessage, error) {
 		return nil, fmt.Errorf("%s returned an unexpected response; expected an array", label)
 	}
 	return array, nil
-}
-
-// GitHub remains anchored to root and the declared or unambiguous remote repository.
-// Pending/failing checks are data, and a failed checks request preserves its PR.
-func GitHub(ctx context.Context, root, repository string) model.GitHubStatus {
-	status := model.GitHubStatus{State: "error", PRs: []model.PR{}}
-	fail := func(err error) model.GitHubStatus { status.Message = err.Error(); return status }
-	repo, err := resolveRepository(ctx, root, repository)
-	if err != nil {
-		return fail(err)
-	}
-	status.Repository = repo
-	r, err := run(ctx, []string{"git", "-C", root, "symbolic-ref", "--quiet", "--short", "HEAD"}, "", 20*time.Second)
-	if err != nil {
-		return fail(err)
-	}
-	if r.code == 1 {
-		status.State = "detached"
-		status.Message = "Detached HEAD; select a branch to inspect its pull requests."
-		return status
-	}
-	if r.code != 0 {
-		return fail(errors.New("cannot read project branch; check that the project root is a Git checkout"))
-	}
-	status.Branch = strings.TrimSpace(r.stdout)
-	if status.Branch == "" {
-		return fail(errors.New("Git returned an empty branch name"))
-	}
-	r, err = run(ctx, []string{"gh", "pr", "list", "--repo", repo, "--head", status.Branch, "--state", "all", "--limit", "10", "--json", "number,title,url,state"}, root, 20*time.Second)
-	if err != nil {
-		return fail(err)
-	}
-	if r.code != 0 {
-		return fail(errors.New(ghError(r)))
-	}
-	items, err := parseArray(r.stdout, "gh pr list")
-	if err != nil {
-		return fail(err)
-	}
-	for _, raw := range items {
-		var pr model.PR
-		if err := json.Unmarshal(raw, &pr); err != nil || pr.Number <= 0 {
-			return fail(errors.New("gh pr list returned an invalid PR identity"))
-		}
-		expected := fmt.Sprintf("https://github.com/%s/pull/%d", repo, pr.Number)
-		if !strings.EqualFold(pr.URL, expected) {
-			return fail(errors.New("gh pr list returned a PR URL outside the declared repository"))
-		}
-		pr.Checks = nil // Never trust checks fields from an unexpected gh list response.
-		pr.ChecksError = ""
-		if pr.State == "OPEN" {
-			checks, err := run(ctx, []string{"gh", "pr", "checks", strconv.Itoa(pr.Number), "--repo", repo, "--json", "name,bucket,state,link"}, root, 20*time.Second)
-			if err != nil {
-				pr.ChecksError = err.Error()
-			} else if checks.code != 0 && checks.code != 1 && checks.code != 8 {
-				pr.ChecksError = ghError(checks)
-			} else {
-				rows, parseErr := parseArray(checks.stdout, "gh pr checks")
-				if parseErr == nil {
-					for _, row := range rows {
-						var check model.Check
-						if string(row) == "null" || json.Unmarshal(row, &check) != nil {
-							parseErr = errors.New("gh pr checks returned an invalid check")
-							break
-						}
-						pr.Checks = append(pr.Checks, check)
-					}
-				}
-				if parseErr != nil {
-					pr.Checks = nil
-					pr.ChecksError = parseErr.Error()
-				}
-			}
-		}
-		status.PRs = append(status.PRs, pr)
-	}
-	status.State = "ready"
-	if len(status.PRs) == 0 {
-		status.State = "no-pr"
-		status.Message = fmt.Sprintf("No pull request found for %s in %s.", status.Branch, repo)
-	}
-	return status
 }
 
 var destinationPattern = regexp.MustCompile(`^[A-Za-z0-9_][A-Za-z0-9_.+@:\[\]-]*$`)

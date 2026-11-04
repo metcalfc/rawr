@@ -1,18 +1,17 @@
 package apps
 
 import (
-	"bytes"
+	"context"
 	"errors"
 	"fmt"
+	"github.com/metcalfc/rawr/internal/services"
 	"github.com/metcalfc/rawr/rawrkit/ui"
-	"io"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 )
 
-const previewBytes = 128 << 10
 const maxTreeRows = 10000
 
 // safeText treats filenames, subprocess text, and file contents as inert text.
@@ -76,12 +75,15 @@ func (t *tree) refresh() error {
 			}
 			return
 		}
-		entries, err := os.ReadDir(actual)
+		entries, limited, err := services.FileDirectory(t.root, actual, maxTreeRows-len(t.rows))
 		if err != nil {
 			if firstErr == nil {
 				firstErr = fmt.Errorf("cannot read %s: %w", directory, err)
 			}
 			return
+		}
+		if limited && firstErr == nil {
+			firstErr = errors.New("tree limited to 10,000 visible entries; collapse a directory to browse further")
 		}
 		sort.Slice(entries, func(i, j int) bool {
 			if entries[i].IsDir() != entries[j].IsDir() {
@@ -118,49 +120,9 @@ func (t *tree) preview(path string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	info, err := os.Stat(actual)
+	doc, err := services.ReadFileDocument(context.Background(), t.root, actual, false, false)
 	if err != nil {
 		return nil, err
 	}
-	if !info.Mode().IsRegular() {
-		return nil, errors.New("select a regular file to preview")
-	}
-	f, err := os.Open(actual)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	info, err = f.Stat()
-	if err != nil {
-		return nil, err
-	}
-	if !info.Mode().IsRegular() {
-		return nil, errors.New("select a regular file to preview")
-	}
-	data, err := io.ReadAll(io.LimitReader(f, previewBytes+1))
-	if err != nil {
-		return nil, err
-	}
-	if bytes.IndexByte(data, 0) >= 0 {
-		return []string{"Binary file — use o to open it with the system application."}, nil
-	}
-	truncated := len(data) > previewBytes
-	if truncated {
-		data = data[:previewBytes]
-	}
-	lines := strings.Split(strings.ReplaceAll(strings.ToValidUTF8(string(data), "�"), "\r\n", "\n"), "\n")
-	if len(lines) > 2000 {
-		lines = lines[:2000]
-		truncated = true
-	}
-	for i, line := range lines {
-		lines[i] = safeText(strings.ReplaceAll(line, "\t", "    "))
-	}
-	if len(data) == 0 {
-		lines = []string{"(empty file)"}
-	}
-	if truncated {
-		lines = append(lines, "… Preview truncated; use o to open the complete file.")
-	}
-	return lines, nil
+	return safeFileLines(doc.Lines), nil
 }

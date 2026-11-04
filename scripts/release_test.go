@@ -110,14 +110,15 @@ func TestChecksumsMatchBytesAndSortNames(t *testing.T) {
 func TestPublicBundleIncludesReadmeMediaAndExcludesLocalCaptures(t *testing.T) {
 	source, bundle := t.TempDir(), t.TempDir()
 	want := map[string]string{
-		"README.md":                 "<img src=\"assets/rawr-logo.png\" alt=\"Rawr\" width=\"220\">\n![Rawr demo](assets/demo.gif)",
-		"docs/RAWRKIT.md":           "public SDK guide",
-		"docs/USAGE.md":             "public usage guide",
-		"docs/VERIFICATION.md":      "public verification summary",
-		"docs/BRANDING.md":          "public artwork provenance",
-		"assets/rawr-logo.png":      "public logo fixture",
-		"assets/demo.gif":           "public demo fixture",
-		"examples/noterawr/main.go": "package main",
+		"README.md":                     "<img src=\"assets/rawr-logo.png\" alt=\"Rawr\" width=\"220\">\n![Rawr demo](assets/demo.gif)\n![Native panes](assets/rex-resource-panes.png)",
+		"docs/RAWRKIT.md":               "public SDK guide",
+		"docs/USAGE.md":                 "public usage guide",
+		"docs/VERIFICATION.md":          "public verification summary",
+		"docs/BRANDING.md":              "public artwork provenance",
+		"assets/rawr-logo.png":          "public logo fixture",
+		"assets/demo.gif":               "public demo fixture",
+		"assets/rex-resource-panes.png": "public native pane fixture",
+		"examples/noterawr/main.go":     "package main",
 	}
 	write := func(name, value string) {
 		t.Helper()

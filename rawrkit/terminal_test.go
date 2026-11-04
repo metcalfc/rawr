@@ -2,6 +2,8 @@ package rawrkit
 
 import (
 	"context"
+	"encoding/json"
+	"github.com/metcalfc/rawr/rawrkit/rex"
 	"reflect"
 	"testing"
 )
@@ -39,4 +41,32 @@ func TestLiveTerminalIdentityCannotSilentlyChangeRecipe(t *testing.T) {
 			f.assertNoDestructiveCalls(t)
 		})
 	}
+}
+
+func TestExplicitReopenAfterViewerExitRetainsEndedSurface(t *testing.T) {
+	m, c, f := newFakeManager(t)
+	ctx := context.Background()
+	spec := TerminalSpec{ID: "file:readme", Title: "README", Argv: []string{"/bin/sleep", "60"}, Cwd: c.Root}
+	if err := m.ActivateTerminal(ctx, c, spec); err != nil {
+		t.Fatal(err)
+	}
+	old, err := m.Snapshot(ctx, c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.processes[old.MainBlock] = rex.Process{LastExit: json.RawMessage(`{"exit_code":0}`)}
+	if err = m.ActivateTerminal(ctx, c, spec); err != nil {
+		t.Fatal(err)
+	}
+	fresh, err := m.Snapshot(ctx, c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if fresh.MainBlock == old.MainBlock || f.count("session.new_window") != 2 {
+		t.Fatal("explicit reopen did not create a fresh view")
+	}
+	if _, ok := f.viewSnapshot().Blocks()[old.MainBlock]; !ok {
+		t.Fatal("ended native surface was discarded")
+	}
+	f.assertNoDestructiveCalls(t)
 }

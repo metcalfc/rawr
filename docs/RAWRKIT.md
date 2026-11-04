@@ -1,8 +1,16 @@
-# rawrkit and the renamed apps
+# rawrkit: resource panes and central work
 
 The commands are now **ghrawr**, **filerawr** and **exerawr**. **Rawr** remains the optional project/saved-setup command. Their shared native pane behavior is a public Go library, so another independently compiled app can use it without importing Rawr's project or provider integrations.
 
 The SDK is part of the Go module `github.com/metcalfc/rawr`. Import the subpackages below; it does not require a separate module.
+
+**Version scope:** this guide describes **v0.2.0**, including `RunLocalAction`, the status/document helpers and the file/PR resource workflows. v0.1.0 contains the earlier pane/UI SDK. The existing VHS GIF remains a historical v0.1.0 standalone UI reference.
+
+In your own Go module, pin the SDK with:
+
+```sh
+go get github.com/metcalfc/rawr@v0.2.0
+```
 
 | Import | Purpose |
 | --- | --- |
@@ -11,6 +19,14 @@ The SDK is part of the Go module `github.com/metcalfc/rawr`. Import the subpacka
 | `github.com/metcalfc/rawr/rawrkit/rex` | Narrow adapter for the verified Rex CLI/API |
 
 All public SDK types are importable by another Go module. Applications do not need to import this repository's `internal` packages. The SDK itself can use its private storage implementation; that is not part of its public contract.
+
+## Resource selection drives work
+
+An app owns its resource list, selection, details and explicit actions. Browsing with arrows or mouse selection does not execute the resource. In the v0.2.0 apps, files/diffs activate read-only work in the center, VM connect actions activate an SSH terminal, and a PR checkout is a separately confirmed local repository action. GitHub browser/check details remain named actions of that pane.
+
+Use `ActivateTerminal` for a declared central view/program and retain previous work in native history tabs. The opened or reused target receives focus. Keep the app's root/scope anchored while focus changes; a remote shell or a different checkout in another pane must not silently retarget its resource list.
+
+The resource app should expose its current action and context through help and status. Cached rows, refresh progress and a failed read are distinct states. Rawr's optional project store owns deliberate saved setups; list refreshes, resource opening and native focus changes do not save a new setup.
 
 ## Register an independent app
 
@@ -53,7 +69,7 @@ func Open(ctx context.Context, root, stateDir, appBinary string) error {
 
 The native launch appends **`--tui --context-file PATH`** to the registered command. The executable must implement those flags, read the explicit JSON with `rawrkit.ReadContext(path)` and render its UI in that new terminal. The helper rejects unknown fields, trailing data and oversized documents. The context contains root/scope/session/anchor/connection identifiers, not terminal output or an environment snapshot. Run/open returns to the caller while Rex hosts the app process. A generic arbitrary executable that does not implement this launch contract is not automatically a pane app.
 
-The complete [noterawr example](../examples/noterawr/main.go) implements this contract with only public SDK imports, tcell and the standard library. From the checkout:
+The complete [noterawr example](../examples/noterawr/main.go) implements this contract with only public SDK imports, tcell and the standard library. From the [v0.2.0 source checkout](https://github.com/metcalfc/rawr/tree/v0.2.0):
 
 ```sh
 go build -o build/bin/noterawr ./examples/noterawr
@@ -63,7 +79,7 @@ build/bin/noterawr --root /absolute/path/to/checkout
 build/bin/noterawr --toggle --root /absolute/path/to/checkout
 ```
 
-It is an example app, rather than a fifth default release executable. Its source is included in release bundles for reference; building the example uses the SDK checkout/module.
+It is an example app, rather than a fifth default release executable. Its source is included in release bundles for reference; the build commands above require the source checkout. An independent module can also copy that example and use the pinned SDK dependency.
 
 Use the same canonical root, session, scope and state directory for apps sharing a workspace. `Open` opens/focuses, `Hide` detaches the surface while keeping its process, `Toggle` hides/shows and `Snapshot` inspects bindings/visibility. A running app is reused through its recorded native identity and process fingerprint. Changed, occupied or ambiguous work is preserved and reported, with interrupted operations retained in a journal.
 
@@ -84,6 +100,8 @@ Call `ui.Run(ctx, view)` to own a real terminal's initialization/restoration. `H
 
 `Canvas.Text` clips printable Unicode and treats content as inert text; `Canvas.Theme` supplies normal/title/selected styles. `ui.List` supplies selection, scrolling, keyboard navigation and one activation per mouse press; it does not choose app actions or own row data. `ui.Refresh[T]` cancels superseded loads and discards their late results. Its load callback returns data; view mutation stays on the UI goroutine. `Canvas.Suspend` can lend the same terminal to an interactive foreground action and restore the UI afterward.
 
+`ui.ResourceStatus` records the last successful update and an error, and formats loading/current/stale status through `Line(loading)`. Applications retain their last good rows. `ui.Document` supplies scrolling for read-only help or details; the application decides how to leave that view. `ui.WrapLines` fits help/detail text to a narrow pane. The app controls whether a mouse/list activation only selects or invokes an explicit action; the built-in panes use selection-only mouse browsing.
+
 `ui.RunScreen` uses a caller-initialized tcell screen, including a simulation screen. The caller retains `Init`/`Fini` ownership. This lets an external module exercise its UI without opening Rex or a real TTY.
 
 ## Put a managed terminal in the center
@@ -94,17 +112,31 @@ Rex opens the terminal, then swaps its native surface into the main work slot. P
 
 The built-in exerawr app supplies the SSH recipe for selected existing VMs. Its provider listing and SSH/browser choices belong to the app. Rawr separately owns deliberate saved project definitions; opening/toggling an app does not save a new arrangement.
 
+Filerawr's file/diff action is another app-owned terminal recipe: the content is displayed read-only in the center, and previous work remains running. A local `p` preview is a different view inside the resource pane. Neither is an editor integration or a pin/preview policy.
+
+## Guard a local repository action
+
+`manager.RunLocalAction(ctx, anchored, action)` checks the original local work shell's foreground idle state, root and primary screen while holding the pane-state lock, then runs the supplied `func(context.Context) error`. This serializes Rawr-managed swaps in that shared pane-state context during the action. It does not coordinate external-client typing or background filesystem writers.
+
+If a login/terminal wrapper hides the actual shell foreground, the guard refuses the action. It does not parse prompt text as an idle-shell signal.
+
+The app still owns confirmation and provider-specific validation. Ghrawr's `x` action asks for `y`/`n`, checks that the selected PR repository matches the anchored local checkout, and refuses tracked/untracked changes or an in-progress Git operation. Inside Rex it uses the local-work guard; outside Rex it uses the local repository checks without a Rex center. It performs checkout only, with no merge, rebase, push, cleanup or terminal-text injection. The callback is not a general sandbox for arbitrary code and must not recursively call methods on that manager while its lock is held.
+
 ## Compatibility and evidence boundaries
 
 New default builds/installations and `rawr-apps_VERSION_OS_ARCH` release bundles contain `ghrawr`, `filerawr`, `exerawr` and `rawr`. The old `ghrex`, `filerex` and `exerex` command entry points remain compatibility names; they are not added to the default new release bundles. `make install` writes only the four current names and does not remove old executables. `make build-compat` also builds the old entry points locally; `make install-compat` explicitly refreshes those aliases along with the current commands.
 
 Running processes retain their original UI code. Installation does not hot-reload or restart them; explicitly closing/reopening an app loads the new executable. Apps retain the shared `rexapps` state directory so a command rename does not silently abandon known native surfaces. Compatibility checks verified in-memory recipe/binding aliases, running-program reuse, and open/plan preserving native surfaces, geometry and saved definition bytes. This compatibility applies to the earlier Go state; Python projects remain separate.
 
+The three built-in v0.2.0 app commands are silent after successful pane actions. `--verbose`/`-v` prints their result JSON; `--status` always prints JSON. Rawr's optional project subcommands keep structured output. This is a built-in CLI policy, not output that the SDK forces on another app; noterawr and other consumers own their command interfaces.
+
 The [public verification summary](VERIFICATION.md) records current coverage and limits. Earlier Python source and tests remain as reference material; the public summary excludes local machine identifiers and raw terminal/session captures.
 
-Before the SDK native walkthrough, the installed Rex skill/guide and live identity were rechecked: CLI/server `0.0.1793645657-gd018d2`, API 10, Rex Beta 0.1.0 (1758), local Unix endpoint on macOS. The SDK uses the verified native create/view/process/inventory/detach/move/swap/focus methods; extracting a public library does not broaden the Rex API/platform claim. Other Rex versions and remote endpoints remain rejected. Autobalance splits must be off for deliberate fixed geometry. Rex's verified private server restart retained native surfaces/layout with fresh shells; it did not restore programs/transcripts. SDK mutation refuses an unexpected generation rather than relaunching into those shells. App reopen and machine reboot remain separate unverified cases.
+The v0.1.0 native baseline checked the installed Rex skill/guide and live identity: CLI/server `0.0.1793645657-gd018d2`, API 10, Rex Beta 0.1.0 (1758), local Unix endpoint on macOS. The same version/endpoint guard remains in v0.2.0. The [verification summary](VERIFICATION.md) distinguishes the v0.2.0 native resource walkthrough with fixture providers from earlier real SSH reuse. Autobalance splits must be off for deliberate fixed geometry. The prior private-server restart retained native surfaces/layout with fresh shells; it did not restore programs/transcripts. SDK mutation refuses an unexpected generation rather than relaunching into those shells. App reopen and machine reboot remain separate unverified cases.
 
 ## Build and verification
+
+Run these from a source checkout. Release archives contain ready-to-run apps, public guides and the noterawr example source; they do not include the Makefile, verification scripts or full SDK tree.
 
 ```sh
 make test vet build
@@ -113,7 +145,7 @@ go test -race ./...
 make release VERSION=dev
 ```
 
-`scripts/sdk-smoke` creates a separate temporary Go module with a local `replace` to this checkout. Its consumer imports only public rawrkit/ui/rex packages plus tcell, verifies a custom `sdk-notes` app/alias unrelated to the built-in names, round-trips explicit context through the public reader, type-checks the native launch/terminal APIs, and runs shared canvas/list selection on a simulation screen. It does not connect to Rex or mutate projects.
+The [external SDK smoke program](https://github.com/metcalfc/rawr/tree/v0.2.0/scripts/sdk-smoke) creates a separate temporary Go module with a local `replace` to this checkout. Its consumer imports only public rawrkit/ui/rex packages plus tcell, verifies a custom `sdk-notes` app/alias unrelated to the built-in names, round-trips explicit context through the public reader, type-checks the native launch/terminal APIs, and runs shared canvas/list selection on a simulation screen. It does not connect to Rex or mutate projects.
 
 For a complete compile matrix of that external consumer:
 
@@ -123,10 +155,10 @@ go run ./scripts/sdk-smoke -targets darwin/arm64,darwin/amd64,linux/arm64,linux/
 
 Release defaults are macOS/Linux arm64+amd64 with CGO disabled. Optional Windows arm64/amd64 zip artifacts can be requested through `make release TARGETS=windows/arm64,windows/amd64`. A build succeeding for a target does not verify Rex, real-terminal rendering, filesystem or SSH behavior there. Bundles include public documentation, dependency license/notice texts, a module/license manifest, build metadata and SHA-256 checksums. The build script does not publish or sign releases.
 
-The external consumer compiled for all six targets above and passed registration/alias, context and UI simulation checks on macOS arm64. Project native acceptance covered a bare `ghrawr` reusing the project pane and a closed/reopened app rebinding to its exact shared identity without duplicate restore. A private-server restart verified fresh shells, lost prior program output, and open/plan/restore preserving those shells without terminal input. Legacy Go compatibility checks preserved existing programs and saved definitions.
+These commands describe how to verify a source checkout. The [public verification summary](VERIFICATION.md) records test/native results and separates v0.2.0 resource checks from the v0.1.0 baseline. That baseline covers pane reuse, retained programs/geometry, explicit save/restore, private-server restart safety, public SDK use and cross-compilation.
 
-Native pane/SDK acceptance covered ordinary command return, repeated open reuse, mixed hide/show with the same programs/geometry, real SSH shells returning to the center/local work, and an independently compiled `noterawr` app using only the public SDK/UI. The example retained its running process across hide/show.
+Terminal References, content text search, editor integration, pin/preview policies and added activity features are not implemented. Linux native Rex behavior remains unverified. Rex owns terminal hosting and native activity; rawrkit does not emulate a universal herdr host or inject relaunch text into arbitrary work.
 
-The real Rex app was also inspected through native accessibility/screen state: filerawr opened a README preview through End+Enter; exerawr accepted mouse and keyboard selection of an existing VM into the center while native split ratios stayed unchanged. The independent noterawr UI rendered its context, and Down+Enter changed its message through the shared list/view runtime. Its process survived hide/show. Existing SSH/local history work was retained; already-running UIs kept their original code.
+## Design references
 
-The full race suite passed, including generic-terminal recipe conflict, legacy executable/alias normalization and old Rawr app-argument regressions. Distribution checks covered six target builds, checksums, extracted macOS executions and optional alias/install checks. Default archives contain only the four current executables, with dependency and Go runtime/standard-library notices. See [VERIFICATION.md](VERIFICATION.md) for the public summary and explicit remaining gaps.
+[herdr-radar](https://github.com/hhdebb/herdr-radar), [herdr-sidebar](https://github.com/alexarthurs/herdr-sidebar), [termscope](https://github.com/iurysza/termscope) and [clauth](https://github.com/uwuclxdy/clauth) inform browse-first resource navigation, contextual detail, visible refresh state and explicit actions. Those are product lessons applied through the verified Rex API and independent panes. No plugin manifest compatibility, account switching, credential capture or credential lending is implied.

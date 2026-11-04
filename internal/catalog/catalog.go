@@ -18,7 +18,7 @@ import (
 func Definitions() []rawrkit.Definition {
 	return []rawrkit.Definition{
 		{ID: "filerawr", Title: "File Rawr", Aliases: []string{"filerex"}, Placement: rawrkit.PlacementSpec{Direction: "horizontal", Side: "before", Ratio: .2, WholeLayer: true}},
-		{ID: "ghrawr", Title: "GitHub Rawr", Aliases: []string{"ghrex"}, Placement: rawrkit.PlacementSpec{Direction: "horizontal", Side: "after", Ratio: .7}},
+		{ID: "ghrawr", Title: "GitHub Rawr", Aliases: []string{"ghrex"}, Placement: rawrkit.PlacementSpec{Direction: "vertical", Side: "before", Ratio: .5, AnchorApp: "exerawr"}},
 		{ID: "exerawr", Title: "Exe Rawr", Aliases: []string{"exerex"}, Placement: rawrkit.PlacementSpec{Direction: "vertical", Side: "after", Ratio: .5, AnchorApp: "ghrawr"}},
 	}
 }

@@ -18,6 +18,7 @@ import (
 	"github.com/metcalfc/rawr/internal/buildinfo"
 	"github.com/metcalfc/rawr/internal/catalog"
 	"github.com/metcalfc/rawr/internal/model"
+	"github.com/metcalfc/rawr/internal/services"
 	panes "github.com/metcalfc/rawr/rawrkit"
 	"github.com/metcalfc/rawr/rawrkit/rex"
 )
@@ -25,7 +26,10 @@ import (
 type options struct {
 	root, repository, scope, session, anchor, rex, server, client string
 	stateDir, configDir, appsStateDir, vm, contextFile, appList   string
+	viewFile                                                      string
+	diff, staged                                                  bool
 	tui, toggle, hide, status, local, version, help               bool
+	verbose                                                       bool
 	expectedRevision                                              int
 	visited                                                       map[string]bool
 }
@@ -74,7 +78,11 @@ func Run(ctx context.Context, name string, args []string, out, errOut io.Writer)
 	}
 	c, err := makeContext(ctx, o)
 	if err == nil {
-		err = runApp(ctx, name, o, c, out)
+		if o.viewFile != "" {
+			err = apps.RunFileView(ctx, c.Root, o.viewFile, o.diff, o.staged)
+		} else {
+			err = runApp(ctx, name, o, c, out)
+		}
 	}
 	if err != nil {
 		fmt.Fprintln(errOut, name+":", err)
@@ -84,6 +92,9 @@ func Run(ctx context.Context, name string, args []string, out, errOut io.Writer)
 }
 
 func runApp(ctx context.Context, name string, o options, c model.Context, out io.Writer) error {
+	if !o.verbose && !o.status {
+		out = io.Discard
+	}
 	client := rex.New(c.Rex, c.Server, c.Client)
 	manager := catalog.NewManager(client, c.StateDir, binaryDir())
 	if o.local {
@@ -92,7 +103,21 @@ func runApp(ctx context.Context, name string, o options, c model.Context, out io
 	}
 	if o.tui {
 		callbacks := model.Callbacks{}
+		callbacks.CheckoutPR = func(pr model.PR) error {
+			action := func(actionCtx context.Context) error { return services.CheckoutPR(actionCtx, c.Root, c.Repository, pr) }
+			if c.Session != "" {
+				return manager.RunLocalAction(ctx, c, action)
+			}
+			return action(ctx)
+		}
 		if c.Session != "" {
+			callbacks.OpenFile = func(request model.FileRequest) error {
+				spec, err := catalog.FileTerminal(binaryDir(), c.Root, request)
+				if err != nil {
+					return err
+				}
+				return manager.ActivateTerminal(ctx, c, spec)
+			}
 			callbacks.SwitchVM = func(vm model.VM) error {
 				return func() error {
 					spec, err := catalog.Terminal(vm, c.Root)
@@ -140,6 +165,9 @@ func parse(name string, args []string, errOut io.Writer) (options, []string, err
 	f.StringVar(&o.vm, "vm", "", "linked existing VM name")
 	f.StringVar(&o.contextFile, "context-file", "", "explicit native launch context JSON")
 	f.StringVar(&o.appList, "apps", "filerawr,ghrawr,exerawr", "Rawr initial app panes (comma separated; empty is shell only)")
+	f.StringVar(&o.viewFile, "view-file", "", "filerawr: read-only file or diff viewer in this terminal")
+	f.BoolVar(&o.diff, "diff", false, "filerawr --view-file: show Git diff")
+	f.BoolVar(&o.staged, "staged", false, "filerawr --view-file --diff: show staged diff")
 	f.IntVar(&o.expectedRevision, "expected-revision", -1, "require this saved revision before saving")
 	f.BoolVar(&o.tui, "tui", false, "run UI in this terminal without opening another pane")
 	f.BoolVar(&o.toggle, "toggle", false, "hide/show this native app pane")
@@ -149,6 +177,10 @@ func parse(name string, args []string, errOut io.Writer) (options, []string, err
 	f.BoolVar(&o.version, "version", false, "print build and tested Rex version")
 	f.BoolVar(&o.help, "help", false, "show help")
 	f.BoolVar(&o.help, "h", false, "show help")
+	if name != "rawr" {
+		f.BoolVar(&o.verbose, "verbose", false, "print successful pane action details as JSON")
+		f.BoolVar(&o.verbose, "v", false, "print successful pane action details as JSON")
+	}
 	// Permit flags before or after subcommands while preserving literal argv after --.
 	var flags, positional []string
 	for i := 0; i < len(args); i++ {
@@ -195,6 +227,12 @@ func parse(name string, args []string, errOut io.Writer) (options, []string, err
 	}
 	if o.expectedRevision < -1 {
 		return o, nil, errors.New("--expected-revision must be nonnegative")
+	}
+	if o.viewFile != "" && (name != "filerawr" || count > 0 || o.contextFile != "") {
+		return o, nil, errors.New("--view-file requires filerawr and cannot combine with pane/UI modes")
+	}
+	if (o.diff || o.staged) && o.viewFile == "" || o.staged && !o.diff {
+		return o, nil, errors.New("--diff requires --view-file; --staged also requires --diff")
 	}
 	return o, positional, nil
 }
@@ -244,17 +282,20 @@ Go uses rawr-go directories and does not import Python state or edit Rex config.
 	}
 	fmt.Fprintf(out, `%s: an independent Rex app
 
-Usage: %s [--root PATH] [--repo OWNER/NAME] [--toggle | --hide | --status]
+Usage: %s [--root PATH] [--repo OWNER/NAME] [--toggle | --hide | --status] [--verbose]
        %s --tui [--root PATH] [--repo OWNER/NAME]
 
 Plain invocation opens or focuses a native pane and returns to the shell.
+Successful pane actions are silent; --verbose (-v) prints their JSON details.
 --toggle hides/shows; --hide retains its running program; --status reads state.
+--status always prints JSON. Errors remain visible on stderr.
 --tui runs in this terminal, including outside Rex. Rawr is optional.
 
 Context: --scope NAME --session ID --anchor ID --state-dir PATH --vm NAME
 Rex:     --rex PATH --server ADDRESS --client ID
-Other:   --version --help
+Other:   --verbose (-v) --version --help
 exerawr:  --local brings the retained local work back into the center.
+filerawr: --view-file PATH [--diff [--staged]] opens a read-only viewer here.
 REX_SESSION and REX_BLOCK supply the caller's session and working pane.
 The project root stays anchored when focus moves into another shell.
 `, name, name, name)

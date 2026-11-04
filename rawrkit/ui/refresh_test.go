@@ -17,6 +17,28 @@ func waitWake(t *testing.T, wake <-chan struct{}) {
 		t.Fatal("refresh did not wake UI")
 	}
 }
+
+// Wakes are notifications that some worker enqueued a result, not an identity
+// for the current generation. A superseded worker can race cancellation and
+// enqueue one last stale result; Poll correctly discards it. Keep consuming
+// notifications until the current result is actually available.
+func waitRefreshResult[T any](t *testing.T, r *ui.Refresh[T], wake <-chan struct{}) (T, error) {
+	t.Helper()
+	timer := time.NewTimer(3 * time.Second)
+	defer timer.Stop()
+	for {
+		if value, err, ready := r.Poll(); ready {
+			return value, err
+		}
+		select {
+		case <-wake:
+		case <-timer.C:
+			t.Fatal("current refresh result did not arrive")
+			var zero T
+			return zero, nil
+		}
+	}
+}
 func TestRefreshDropsQueuedStaleResultsAndCancelsPreviousRequest(t *testing.T) {
 	wake := make(chan struct{}, 8)
 	r := ui.NewRefresh[string](func() { wake <- struct{}{} })
@@ -40,10 +62,9 @@ func TestRefreshDropsQueuedStaleResultsAndCancelsPreviousRequest(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Fatal("superseded request was not canceled")
 	}
-	waitWake(t, wake)
-	value, err, ready := r.Poll()
-	if !ready || err != nil || value != "current result" || r.Loading() {
-		t.Fatalf("latest refresh result: %q %v %v", value, err, ready)
+	value, err := waitRefreshResult(t, r, wake)
+	if err != nil || value != "current result" || r.Loading() {
+		t.Fatalf("latest refresh result: %q %v", value, err)
 	}
 }
 

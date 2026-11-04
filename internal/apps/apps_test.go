@@ -70,7 +70,7 @@ func TestVMBrowseDoesNotActivateAndFailureKeepsCurrentVM(t *testing.T) {
 	}
 }
 
-func TestMouseUsesScrolledRowsAndActivatesOncePerClick(t *testing.T) {
+func TestMouseUsesScrolledRowsWithoutConnecting(t *testing.T) {
 	calls := []string{}
 	a, s := testApplication(t, "exerawr", model.Context{}, model.Callbacks{SwitchVM: func(vm model.VM) error { calls = append(calls, vm.Name); return nil }})
 	s.SetSize(60, 10)
@@ -88,8 +88,12 @@ func TestMouseUsesScrolledRowsAndActivatesOncePerClick(t *testing.T) {
 	a.handle(context.Background(), press)
 	a.handle(context.Background(), press)
 	a.handle(context.Background(), tcell.NewEventMouse(4, contentStart, tcell.ButtonNone, tcell.ModNone))
+	if len(calls) != 0 || a.list.Selected != i {
+		t.Fatalf("click did not safely select the visible VM: %v; row %d", calls, i)
+	}
+	a.handle(context.Background(), key(tcell.KeyEnter))
 	if len(calls) != 1 || calls[0] != a.vms[i].Name {
-		t.Fatalf("click picked wrong VM or duplicated activation: %v; row %d", calls, i)
+		t.Fatal("explicit connection used a different resource")
 	}
 	a.draw()
 	if !strings.Contains(screenLine(s, 2), calls[0]) {
@@ -120,15 +124,15 @@ func TestStandaloneSSHReturnsToUIAndKeepsHostOnFailure(t *testing.T) {
 	a.draw() // A usable screen is retained after resume.
 }
 
-func TestBrowserUsesCurrentVMAndLinkFailuresPreserveIt(t *testing.T) {
+func TestBrowserUsesSelectedVMAndLinkFailuresPreserveContext(t *testing.T) {
 	a, _ := testApplication(t, "exerawr", model.Context{VM: "old"}, model.Callbacks{LinkVM: func(model.VM) error { return errors.New("write failed") }})
 	a.vms = []model.VM{{Name: "old"}, {Name: "new"}}
 	a.list.Selected = 1
 	opened := ""
 	a.deps.openURL = func(_ context.Context, url string) error { opened = url; return nil }
 	a.handle(context.Background(), character('b'))
-	if opened != "https://old.exe.xyz" {
-		t.Fatalf("browser used highlighted host: %s", opened)
+	if opened != "https://new.exe.xyz" {
+		t.Fatalf("browser did not use highlighted host: %s", opened)
 	}
 	a.handle(context.Background(), character('l'))
 	if a.context.VM != "old" {
@@ -181,7 +185,7 @@ func TestTreeAnchorsPreviewAndDoesNotFollowSymlinks(t *testing.T) {
 		t.Fatalf("unsafe preview: %q", a.preview)
 	}
 	a.draw()
-	if !strings.Contains(screenLine(s, 2), "Preview:") || filepath.Base(a.previewPath) != "safe.txt" {
+	if !strings.Contains(screenLine(s, contentStart-1), "Preview:") || filepath.Base(a.previewPath) != "safe.txt" {
 		t.Fatal("preview header missing selected file")
 	}
 	if a.handle(context.Background(), character('q')) || a.preview != nil {
@@ -242,7 +246,9 @@ func TestGitHubPRChooserAndInertScreen(t *testing.T) {
 	if !strings.Contains(screenLine(s, contentStart+1), "title�[31m") {
 		t.Fatal("service text was not inert")
 	}
-	if !strings.Contains(screenLine(s, contentStart+3), "pending · build · QUEUED") {
+	a.handle(context.Background(), character('c'))
+	a.draw()
+	if !strings.Contains(screenLine(s, contentStart+2), "pending · build · QUEUED") {
 		t.Fatal("selected PR checks missing")
 	}
 	a.handle(context.Background(), key(tcell.KeyEnter))
@@ -282,7 +288,7 @@ func TestGitHubChecksCanScrollInSmallPane(t *testing.T) {
 	a.handle(context.Background(), character('c'))
 	a.handle(context.Background(), key(tcell.KeyPgDn))
 	a.draw()
-	if !strings.Contains(screenLine(s, contentStart+2), "check-10") {
+	if a.checkOffset <= 0 || !strings.Contains(screenLine(s, contentStart+2), fmt.Sprintf("check-%02d", a.checkOffset)) {
 		t.Fatal("checks beyond the first screen are inaccessible")
 	}
 	if a.handle(context.Background(), character('q')) || a.checkDetails {

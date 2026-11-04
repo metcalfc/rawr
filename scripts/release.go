@@ -40,6 +40,7 @@ var publicFiles = []string{
 	"docs/BRANDING.md",
 	"assets/rawr-logo.png",
 	"assets/demo.gif",
+	"assets/rex-resource-panes.png",
 	"examples/noterawr/main.go",
 }
 
