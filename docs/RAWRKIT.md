@@ -4,7 +4,7 @@ The commands are now **ghrawr**, **filerawr** and **exerawr**. **Rawr** remains 
 
 The SDK is part of the Go module `github.com/metcalfc/rawr`. Import the subpackages below; it does not require a separate module.
 
-**Version scope:** this guide describes **v0.2.0**, including `RunLocalAction`, the status/document helpers and the file/PR resource workflows. v0.1.0 contains the earlier pane/UI SDK. The refreshed [VHS UI tour](https://github.com/metcalfc/rawr/tree/main/demos) runs the standalone apps with labelled fixture providers. It does not demonstrate native pane hosting, central work switching, PR checkout, browser actions or SSH; native acceptance is recorded separately.
+**Version scope:** this guide describes **v0.2.0**, including `RunLocalAction`, the status/document helpers and the file/PR resource workflows. v0.1.0 contains the earlier pane/UI SDK. The [main demo](../assets/demo.gif) captures the real Rex GUI: the three commands open native resource panes from an existing work terminal, and a selected local file opens in the center. Its provider data are fixtures; it does not demonstrate a live-provider checkout, browser action or SSH connection. The [optional standalone VHS tour](https://github.com/metcalfc/rawr/blob/main/assets/standalone-demo.gif) is separate. See [capture methods](https://github.com/metcalfc/rawr/tree/main/demos) and [verification](VERIFICATION.md) for their scope.
 
 In your own Go module, pin the SDK with:
 
@@ -108,7 +108,7 @@ Call `ui.Run(ctx, view)` to own a real terminal's initialization/restoration. `H
 
 An app can call `manager.ActivateTerminal(ctx, anchored, rawrkit.TerminalSpec{...})`. The spec supplies a stable `ID`, `Title`, literal `Argv` and absolute `Cwd`; optional `Metadata` holds app-owned nonsecret identifiers. This API is generic: a caller can choose SSH, a local tool or another declared program without adding a provider integration to rawrkit.
 
-Rex opens the terminal, then swaps its native surface into the main work slot. Previous work remains in a native history tab. Reusing the same terminal ID with the same recipe reuses its live program. A conflicting argv, cwd, title or metadata under that live ID returns an error while preserving the work. `LocalTerm` brings the retained original local work back to the center. Neither operation injects relaunch text into an arbitrary terminal, and the library does not own VM lifecycle or credentials.
+Rex opens the terminal, then swaps its native surface into the main work slot. Previous work remains in a native history tab. Reusing the same terminal ID with the same recipe reuses its live program. A conflicting argv, cwd, title or metadata under that live ID returns an error while preserving the work. `LocalTerm` brings the retained original local work back to the center; a caller in a history tab must explicitly select the resource tab to see that restored center. Neither operation injects relaunch text into an arbitrary terminal, and the library does not own VM lifecycle or credentials.
 
 The built-in exerawr app supplies the SSH recipe for selected existing VMs. Its provider listing and SSH/browser choices belong to the app. Rawr separately owns deliberate saved project definitions; opening/toggling an app does not save a new arrangement.
 

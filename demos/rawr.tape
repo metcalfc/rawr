@@ -1,6 +1,6 @@
 # Current v0.2.0 standalone UI tour; not a native Rex workspace recording.
 # Run ./demos/record.sh from the repository root. See demos/README.md.
-Output assets/demo.gif
+Output assets/standalone-demo.gif
 
 Require bash
 Require git

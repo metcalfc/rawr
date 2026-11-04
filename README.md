@@ -6,11 +6,11 @@
 
 Small resource panes. Your work in the center.
 
-Rawr is a family of Go apps for [Rex](https://www.superlogical.com/rex). Browse files, pull requests, issues and VMs in independent native panes, then choose an explicit action for the selected resource. Open a file or diff in the central work pane, check out a PR into an idle local checkout, or connect a VM shell. Previous central work stays available in native tabs.
+Run `ghrawr`, `filerawr` or `exerawr` from an existing work terminal in [Rex](https://www.superlogical.com/rex). Each Go command opens or focuses its own native resource pane and returns, leaving your work available. Browse files, pull requests, issues and VMs, then explicitly open a file/diff in the center, check out a PR into an idle local checkout, or connect a VM shell. Previous central work stays available in native tabs.
 
-![Actual native Rex panes with a central file view](assets/rex-resource-panes.png)
+![Captured native Rex workflow: ghrawr, filerawr and exerawr from a work terminal](assets/demo.gif)
 
-Actual Rex panes from the v0.2.0 walkthrough. The center displays a real file in a disposable project; GitHub and VM data are labelled fixtures. Previous local work is retained in the visible native tab.
+Captured from the actual Rex GUI: launch the three commands from a work terminal, browse the native resource panes, open a local file in the center and return to the retained shell. GitHub/VM provider data are labelled fixtures. This animation uses captured GUI keyframes; it does not depict a live-provider checkout, browser action or SSH connection. [Capture scope and reproduction](https://github.com/metcalfc/rawr/tree/main/demos).
 
 **v0.2.0** adds repository-wide PR/issue browsing, file Changes and filters, central file/diff views, guarded PR checkout and quieter shell commands. Upgrading scripts from v0.1.0: add `--verbose` to keep receiving pane-action JSON. `--status` still prints JSON.
 
@@ -47,13 +47,15 @@ go install github.com/metcalfc/rawr/cmd/rawr@v0.2.0
 
 ## Run the apps
 
-From a terminal inside Rex, in your project:
+From an existing work terminal inside Rex, in your project:
 
 ```sh
-filerawr --root "$PWD"
-ghrawr --root "$PWD" --repo OWNER/NAME
-exerawr --root "$PWD"
+ghrawr
+filerawr
+exerawr
 ```
+
+Each command opens/focuses its pane; return focus to your working terminal to run the next one. The default context is its Git root, otherwise its current directory. Use `--root PATH` or `ghrawr --repo OWNER/NAME` when you need an explicit context.
 
 Use `exerawr --local` from the same local context to return retained local work to the center. The apps also offer `--tui` in an ordinary interactive terminal; file Enter falls back to a local preview when there is no Rex center. See [the usage guide](docs/USAGE.md) for exact keys, checkout guards, roots and saved setups.
 
@@ -80,11 +82,11 @@ The v0.2.0 native resource walkthrough uses labelled GitHub/VM fixtures; earlier
 
 PR checkout also refuses a macOS login/wrapped shell when Rex cannot verify its idle shell foreground. A visible prompt is not treated as proof that checkout is safe.
 
-## v0.2.0 terminal UI tour
+## Optional standalone UI tour
 
-![v0.2.0 standalone terminal UI tour with fixture provider data](assets/demo.gif)
+The [standalone VHS tour](https://github.com/metcalfc/rawr/blob/main/assets/standalone-demo.gif) shows the `--tui` apps in one isolated terminal, including filename filters, local preview/diffs, PRs/issues/checks and VM details. Its providers are fixtures; it does not show the native Rex window. [Recording instructions](https://github.com/metcalfc/rawr/tree/main/demos#optional-standalone-vhs-tour).
 
-Actual Go `--tui` apps in one isolated VHS terminal: file filtering, local preview and Git Changes/diff; GitHub PRs, issues, filters and checks; VM details. GitHub/VM data are labelled fixtures. The tour does not show native Rex panes, central work switching, PR checkout, browser actions or SSH connections. The native Rex screenshot above is separate. [Recording scope and reproduction](https://github.com/metcalfc/rawr/tree/main/demos).
+A separate [native pane screenshot](assets/rex-resource-panes.png) is also available. Media updates on main do not change the v0.2.0 release tag or archives.
 
 ## Inspiration
 

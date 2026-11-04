@@ -6,7 +6,7 @@ Full usage and distribution details. Run checkout examples from the repository r
 
 The controls below describe **v0.2.0**. It adds Changes and filename/list filters, repository-wide open PR/issue views, central file/diff opening, guarded PR checkout and explicit VM actions to the earlier v0.1.0 UI.
 
-Successful standalone pane actions are now silent. Scripts consuming v0.1.0 lifecycle JSON must add `--verbose` (or `-v`); `--status` continues to print JSON. Rawr project subcommands retain their structured output. Existing app processes keep their original code until explicitly reopened; installing new binaries does not restart live work. The refreshed VHS GIF tours the v0.2.0 standalone UIs with labelled fixture providers; it is separate from native Rex acceptance.
+Successful standalone pane actions are now silent. Scripts consuming v0.1.0 lifecycle JSON must add `--verbose` (or `-v`); `--status` continues to print JSON. Rawr project subcommands retain their structured output. Existing app processes keep their original code until explicitly reopened; installing new binaries does not restart live work. The README animation captures an actual native Rex workflow with labelled fixture providers. A separate optional VHS tour shows the standalone UIs.
 
 Three standalone Go commands open independent native Rex panes:
 
@@ -84,9 +84,14 @@ Native integration is verified against Rex CLI/server **`0.0.1793645657-gd018d2`
 
 ## Open the resource panes
 
-From a terminal inside Rex:
+Run each command from your existing work terminal inside Rex. Return focus there before launching the next app:
 
 ```sh
+ghrawr
+filerawr
+exerawr
+
+# Explicit project/repository context, when needed:
 filerawr --root /absolute/path/to/checkout
 ghrawr --root /absolute/path/to/checkout --repo OWNER/NAME
 exerawr --root /absolute/path/to/checkout
@@ -173,7 +178,7 @@ With `--tui` outside Rex, Enter previews the file in the current terminal UI ins
 | `b` | Open the selected VM in the browser |
 | `r` / `?` | Refresh / contextual help |
 
-Mouse selection and arrows only browse. Connecting explicitly puts the selected VM's SSH shell in the central work pane and focuses it. Previous local work stays running in a **Work · previous** native tab; older VM shells stay in **VM · HOST** tabs. Reconnecting the same host reuses its shell. `exerawr --local` brings retained local work back to the center. Hide resource panes with `--toggle` to give central work more space.
+Mouse selection and arrows only browse. Connecting explicitly puts the selected VM's SSH shell in the central work pane and focuses it. Previous local work stays running in a **Work · previous** native tab; older VM shells stay in **VM · HOST** tabs. Reconnecting the same host reuses its shell. `exerawr --local` brings retained local work back to the center. When running it from a history tab, explicitly select the original resource tab to view the restored center; `--local` does not automatically switch the active native tab. Hide resource panes with `--toggle` to give central work more space.
 
 `l` is available only when an embedding caller supplies the optional link callback. The standalone CLI does not own a saved project link; use `rawr link PROJECT EXISTING_VM` for that deliberate metadata change. Opening a browser or connecting a live shell does not save a setup.
 
@@ -247,6 +252,8 @@ The [source workflow](https://github.com/metcalfc/rawr/blob/v0.2.0/.github/workf
 
 ## Recording and remaining scope
 
-The [v0.2.0 VHS UI tour](https://github.com/metcalfc/rawr/tree/main/demos) runs the real standalone apps in one isolated terminal. It shows filename filtering, local preview, Git Changes/diff, GitHub PR/issues/filter/checks and VM details. GitHub and VM provider records are labelled fixtures. It does not show native Rex panes, central work switching, browser actions, PR checkout or actual SSH. The published v0.2.0 tag and release archives retain their earlier recording; this media refresh and its reproduction scripts live on main.
+The [main demo](../assets/demo.gif) captures the actual Rex GUI, starting from a working terminal and opening `ghrawr`, `filerawr` and `exerawr` as native panes. It shows resource browsing and local file opening in the center. Captured GUI keyframes are encoded into the animation; GitHub/VM records are labelled fixtures, and no live-provider checkout, browser action or SSH connection is demonstrated.
+
+The [optional standalone VHS tour](https://github.com/metcalfc/rawr/blob/main/assets/standalone-demo.gif) shows the `--tui` apps in one isolated terminal. It covers filename filters/local preview/diffs, PRs/issues/checks and VM details, without displaying native Rex panes. See [capture and recording instructions](https://github.com/metcalfc/rawr/tree/main/demos) for the two distinct methods. Media updates on main leave the published v0.2.0 tag and release archives unchanged.
 
 Terminal References, content text search, editor integration, pin/preview policies and additional activity features are not implemented. Filename filters and read-only views are the current file-navigation scope. Rex continues to own native terminal hosting/activity; no universal herdr compatibility host or terminal-text relaunch mechanism is introduced. Linux native acceptance remains unverified.
