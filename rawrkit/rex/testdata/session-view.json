@@ -1,0 +1,101 @@
+{
+  "revision": 8,
+  "session_id": "session:fixture-1",
+  "label": "Fixture session",
+  "active_window_id": "window:fixture-1",
+  "windows": [
+    {
+      "window_id": "window:fixture-1",
+      "label": "Fixture workspace",
+      "focused_block_id": "block:fixture-1",
+      "layers": [
+        {
+          "layer_id": "layer:fixture-1",
+          "kind": "tiled",
+          "bounds": [
+            0,
+            0,
+            1,
+            1
+          ],
+          "layout": {
+            "rect": [
+              0,
+              0,
+              1,
+              1
+            ],
+            "split": {
+              "split_id": "split:fixture-1",
+              "direction": "vertical",
+              "ratio": 0.6,
+              "before": {
+                "rect": [
+                  0,
+                  0,
+                  1,
+                  0.6
+                ],
+                "block_id": "block:fixture-1"
+              },
+              "after": {
+                "rect": [
+                  0,
+                  0.6,
+                  1,
+                  0.4
+                ],
+                "block_id": "block:fixture-2"
+              }
+            }
+          },
+          "blocks": [
+            {
+              "block_id": "block:fixture-1",
+              "label": "sentinel-a",
+              "creator_name": "com.superlogical.terminal",
+              "flavor": "com.superlogical.terminal.shell",
+              "host_id": "host:fixture",
+              "owner": "client:fixture-1"
+            },
+            {
+              "block_id": "block:fixture-2",
+              "label": "sentinel-b",
+              "creator_name": "com.superlogical.terminal",
+              "flavor": "com.superlogical.terminal.shell",
+              "host_id": "host:fixture"
+            }
+          ]
+        },
+        {
+          "layer_id": "layer:fixture-2",
+          "kind": "floating",
+          "bounds": [
+            0.1,
+            0.1,
+            0.6,
+            0.5
+          ],
+          "layout": {
+            "rect": [
+              0.1,
+              0.1,
+              0.6,
+              0.5
+            ],
+            "block_id": "block:fixture-3"
+          },
+          "blocks": [
+            {
+              "block_id": "block:fixture-3",
+              "label": "float",
+              "creator_name": "com.superlogical.terminal",
+              "flavor": "com.superlogical.terminal.shell",
+              "host_id": "host:fixture"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

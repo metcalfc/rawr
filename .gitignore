@@ -1,0 +1,20 @@
+__pycache__/
+*.pyc
+.acceptance/
+.venv/
+.cache/
+build/
+dist/
+*.test
+coverage.out
+
+# Local acceptance captures contain machine/session metadata and real VM details.
+docs/evidence/
+
+# Historical local handoff/reports remain available in the working copy.
+docs/*.md
+!docs/RAWRKIT.md
+!docs/USAGE.md
+!docs/VERIFICATION.md
+!docs/BRANDING.md
+rex-projects-handoff.md
