@@ -33,7 +33,9 @@ Isolated workspaces used real native Rex panes with explicitly labelled local Gi
 
 The original directly hosted Bash shell kept its PID through checkout, resource swaps and return to local work. Native split geometry was checked against the original 20% Files / 70% remaining-work split / 50% right-column split. Mixed hide/show retained resource IDs, processes and geometry around the central diff. Reopening an explicitly quit viewer created a fresh owned view while retaining its exited surface. No server restart or launch-command injection was used; unrelated user sessions were preserved.
 
-The README's [native pane screenshot](../assets/rex-resource-panes.png) was captured from this workspace. Its project files are real disposable files and all provider identities/data are fixtures. The older GIF remains a standalone UI reference.
+The README's [native pane screenshot](../assets/rex-resource-panes.png) was captured from this workspace. Its project files are real disposable files and all provider identities/data are fixtures. The [updated VHS GIF](../assets/demo.gif) is a separate standalone UI tour, not a native pane recording.
+
+The post-release VHS refresh used the released v0.2.0 macOS arm64 apps from commit `f8835bc`. It shows filename filtering/local previews, real worktree and staged diffs in a disposable repository, fixture PR/issues filtering and checks, and fixture VM details. The 1024×640 GIF runs for 30.56 seconds (758,510 bytes). The tape's screen-readiness checks completed; decoded GIF frames and the ending were visually inspected. No browser, checkout, SSH connection or Rex action was performed by the recording. Fixture Git uses an isolated environment with signing/hooks disabled, and the recorder receives no provider credentials or Rex session identity. The published v0.2.0 tag and archives retain their original release-time recording; current recorder source and media are on main.
 
 ### Concrete limits found
 

@@ -6,7 +6,7 @@ Full usage and distribution details. Run checkout examples from the repository r
 
 The controls below describe **v0.2.0**. It adds Changes and filename/list filters, repository-wide open PR/issue views, central file/diff opening, guarded PR checkout and explicit VM actions to the earlier v0.1.0 UI.
 
-Successful standalone pane actions are now silent. Scripts consuming v0.1.0 lifecycle JSON must add `--verbose` (or `-v`); `--status` continues to print JSON. Rawr project subcommands retain their structured output. Existing app processes keep their original code until explicitly reopened; installing new binaries does not restart live work. The existing VHS GIF is a historical v0.1.0 standalone-terminal reference.
+Successful standalone pane actions are now silent. Scripts consuming v0.1.0 lifecycle JSON must add `--verbose` (or `-v`); `--status` continues to print JSON. Rawr project subcommands retain their structured output. Existing app processes keep their original code until explicitly reopened; installing new binaries does not restart live work. The refreshed VHS GIF tours the v0.2.0 standalone UIs with labelled fixture providers; it is separate from native Rex acceptance.
 
 Three standalone Go commands open independent native Rex panes:
 
@@ -221,7 +221,7 @@ make sdk-smoke
 make release VERSION=dev
 ```
 
-`dist/` receives `rawr-apps_VERSION_OS_ARCH` bundles for the default targets: macOS and Linux, each arm64 and amd64. Every bundle contains `ghrawr`, `filerawr`, `exerawr`, `rawr`, the README, logo, native screenshot and historical demo GIF, public guides, the noterawr example source, third-party license texts, a license manifest, build metadata and binary SHA-256 checksums. The output directory's `SHA256SUMS` checksums the archives. The release builder uses an explicit public-file list, Go's standard library, `CGO_ENABLED=0`, `-trimpath` and literal build arguments. `make sdk-smoke` compiles a separate consumer module using only the public SDK imports and a custom app ID.
+`dist/` receives `rawr-apps_VERSION_OS_ARCH` bundles for the default targets: macOS and Linux, each arm64 and amd64. Every bundle contains `ghrawr`, `filerawr`, `exerawr`, `rawr`, the README, logo, native screenshot and demo GIF from its source commit, public guides, the noterawr example source, third-party license texts, a license manifest, build metadata and binary SHA-256 checksums. The output directory's `SHA256SUMS` checksums the archives. The release builder uses an explicit public-file list, Go's standard library, `CGO_ENABLED=0`, `-trimpath` and literal build arguments. `make sdk-smoke` compiles a separate consumer module using only the public SDK imports and a custom app ID.
 
 Extract the matching archive, check its SHA-256, and copy whichever executables you need into PATH. Go is not required on the destination. Services still require their normal external tools (`git`/`gh` or `ssh`), and native panes require the verified Rex installation.
 
@@ -247,6 +247,6 @@ The [source workflow](https://github.com/metcalfc/rawr/blob/v0.2.0/.github/workf
 
 ## Recording and remaining scope
 
-The [historical v0.1.0 VHS recording](https://github.com/metcalfc/rawr/tree/v0.2.0/demos) shows the earlier standalone terminal UIs with fixture provider data. It does not demonstrate native Rex panes or the v0.2.0 resource-to-center workflow.
+The [v0.2.0 VHS UI tour](https://github.com/metcalfc/rawr/tree/main/demos) runs the real standalone apps in one isolated terminal. It shows filename filtering, local preview, Git Changes/diff, GitHub PR/issues/filter/checks and VM details. GitHub and VM provider records are labelled fixtures. It does not show native Rex panes, central work switching, browser actions, PR checkout or actual SSH. The published v0.2.0 tag and release archives retain their earlier recording; this media refresh and its reproduction scripts live on main.
 
 Terminal References, content text search, editor integration, pin/preview policies and additional activity features are not implemented. Filename filters and read-only views are the current file-navigation scope. Rex continues to own native terminal hosting/activity; no universal herdr compatibility host or terminal-text relaunch mechanism is introduced. Linux native acceptance remains unverified.

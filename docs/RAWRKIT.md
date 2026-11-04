@@ -4,7 +4,7 @@ The commands are now **ghrawr**, **filerawr** and **exerawr**. **Rawr** remains 
 
 The SDK is part of the Go module `github.com/metcalfc/rawr`. Import the subpackages below; it does not require a separate module.
 
-**Version scope:** this guide describes **v0.2.0**, including `RunLocalAction`, the status/document helpers and the file/PR resource workflows. v0.1.0 contains the earlier pane/UI SDK. The existing VHS GIF remains a historical v0.1.0 standalone UI reference.
+**Version scope:** this guide describes **v0.2.0**, including `RunLocalAction`, the status/document helpers and the file/PR resource workflows. v0.1.0 contains the earlier pane/UI SDK. The refreshed [VHS UI tour](https://github.com/metcalfc/rawr/tree/main/demos) runs the standalone apps with labelled fixture providers. It does not demonstrate native pane hosting, central work switching, PR checkout, browser actions or SSH; native acceptance is recorded separately.
 
 In your own Go module, pin the SDK with:
 

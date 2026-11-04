@@ -1,3 +1,4 @@
+# Current v0.2.0 standalone UI tour; not a native Rex workspace recording.
 # Run ./demos/record.sh from the repository root. See demos/README.md.
 Output assets/demo.gif
 
@@ -17,64 +18,111 @@ Set WindowBar Colorful
 Set Theme "Catppuccin Mocha"
 Set Framerate 12
 Set CursorBlink false
-Set TypingSpeed 20ms
+Set TypingSpeed 25ms
 
 Hide
 Type "source demos/session.sh"
 Enter
-Sleep 300ms
+Wait+Screen /RAWR v0.2.0/
 Show
 Sleep 2s
 
-Type `filerawr --tui --context-file "$RAWR_DEMO_CONTEXT"`
+# Files: browse, filter, preview, then inspect actual worktree/staged diffs.
+Type "filerawr --tui"
 Enter
+Wait+Screen /1 Tree/
+Sleep 1s
+Screenshot .acceptance/vhs-demo/tree.png
+Type "/main.go"
+Enter
+Sleep 800ms
+Type "p"
+Wait+Screen /Preview:/
 Sleep 2s
-Right
-Sleep 700ms
-Down
-Enter
-Sleep 3s
+Screenshot .acceptance/vhs-demo/file-preview.png
 Type "q"
-Sleep 500ms
+Type "/"
+Ctrl+U
+Enter
+Type "2"
+Wait+Screen /worktree/
+Wait+Screen /staged/
+Sleep 2s
+Screenshot .acceptance/vhs-demo/changes.png
+Enter
+Wait+Screen /diff --git/
+Sleep 2500ms
+Screenshot .acceptance/vhs-demo/worktree-diff.png
+Type "q"
+Down
+Type "p"
+Wait+Screen /Staged diff:/
+Sleep 2s
+Screenshot .acceptance/vhs-demo/staged-diff.png
+Type "q"
 
 Hide
 Type "q"
-Sleep 200ms
+Wait+Screen /\$ /
 Ctrl+L
 Show
-Type `ghrawr --tui --context-file "$RAWR_DEMO_CONTEXT"`
+
+# GitHub: PR checks, repository issues, then filter each resource list.
+Type "ghrawr --tui"
 Enter
-Sleep 2s
+Wait+Screen /#42/
+Sleep 1s
 Type "c"
-Sleep 3s
+Wait+Screen /Pane safety/
+Sleep 2500ms
+Screenshot .acceptance/vhs-demo/pr-checks.png
 Type "q"
-Down
-Sleep 1s
-Up
-Type "r"
-Sleep 1s
+Type "2"
+Wait+Screen /Browse terminal references/
+Sleep 1500ms
+Type "/references"
+Enter
+Wait+Screen /1 matching/
+Sleep 2s
+Screenshot .acceptance/vhs-demo/issues-filter.png
+Type "1"
+Type "/project"
+Enter
+Wait+Screen /1 matching/
+Sleep 1500ms
+Screenshot .acceptance/vhs-demo/pr-filter.png
 
 Hide
 Type "q"
-Sleep 200ms
+Wait+Screen /\$ /
 Ctrl+L
 Show
-Type `exerawr --tui --context-file "$RAWR_DEMO_CONTEXT"`
+
+# VMs: discovery and details only; no SSH or browser action is performed.
+Type "exerawr --tui"
 Enter
+Wait+Screen /demo-api/
+Sleep 1s
+Down
+Type "i"
+Wait+Screen /SSH: demo-worker.invalid/
+Sleep 2500ms
+Screenshot .acceptance/vhs-demo/vm-details.png
+Type "q"
+Wait+Screen /demo-sandbox/
+Down
+Type "i"
+Wait+Screen /Status: stopped/
 Sleep 2s
-Down
-Sleep 1s
-Down
-Sleep 1s
-Up
-Type "r"
-Sleep 1s
+Screenshot .acceptance/vhs-demo/vm-stopped.png
 
 Hide
 Type "q"
-Sleep 200ms
+Type "q"
+Wait+Screen /\$ /
 Ctrl+L
-Type "printf 'Three real Go UIs. One shared rawrkit.\n\nGitHub + VM data: fixtures, not live providers.\nNative Rex panes are outside this terminal recording.\n'"
+Type "rawr_demo_outro"
 Enter
+Wait+Screen /Three tools/
 Show
 Sleep 2s

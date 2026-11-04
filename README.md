@@ -80,11 +80,11 @@ The v0.2.0 native resource walkthrough uses labelled GitHub/VM fixtures; earlier
 
 PR checkout also refuses a macOS login/wrapped shell when Rex cannot verify its idle shell foreground. A visible prompt is not treated as proof that checkout is safe.
 
-## Earlier terminal recording
+## v0.2.0 terminal UI tour
 
-![v0.1.0 standalone terminal reference](assets/demo.gif)
+![v0.2.0 standalone terminal UI tour with fixture provider data](assets/demo.gif)
 
-This historical v0.1.0 VHS GIF shows standalone `--tui` apps with sample GitHub/VM data. It does not show native Rex panes, central work switching or the v0.2.0 actions. [Recording scope and reproduction](https://github.com/metcalfc/rawr/tree/v0.2.0/demos).
+Actual Go `--tui` apps in one isolated VHS terminal: file filtering, local preview and Git Changes/diff; GitHub PRs, issues, filters and checks; VM details. GitHub/VM data are labelled fixtures. The tour does not show native Rex panes, central work switching, PR checkout, browser actions or SSH connections. The native Rex screenshot above is separate. [Recording scope and reproduction](https://github.com/metcalfc/rawr/tree/main/demos).
 
 ## Inspiration
 
