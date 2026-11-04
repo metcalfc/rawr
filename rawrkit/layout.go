@@ -271,7 +271,19 @@ func (m *Manager) show(ctx context.Context, s *State, i rex.Identity, v rex.View
 	if desired == nil {
 		return Result{}, errors.New("tool placement is ambiguous after native workspace changes; retained process preserved")
 	}
-	s.Pending = &Pending{Operation: "show", BlockID: b.BlockID, Blocks: rex.Leaves(desired)}
+	pending := &Pending{Operation: "show", BlockID: b.BlockID, Blocks: rex.Leaves(desired), Witnesses: map[string]PendingWitness{}}
+	for _, bid := range pending.Blocks {
+		block, exists := inv[bid]
+		if !exists {
+			return Result{}, errors.New("show surface disappeared before layout changes; live work preserved")
+		}
+		process, err := m.Rex.Process(ctx, s.Context.Session, bid)
+		if err != nil {
+			return Result{}, err
+		}
+		pending.Witnesses[bid] = pendingWitness(block, process)
+	}
+	s.Pending = pending
 	if err = storage.WriteJSON(path, s); err != nil {
 		return Result{}, err
 	}

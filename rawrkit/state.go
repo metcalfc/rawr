@@ -12,6 +12,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"encoding/json"
@@ -46,10 +47,23 @@ type Binding struct {
 	Path    string `json:"path"`
 }
 type Pending struct {
-	Operation string   `json:"operation"`
-	Label     string   `json:"label,omitempty"`
-	BlockID   string   `json:"block_id,omitempty"`
-	Blocks    []string `json:"blocks,omitempty"`
+	Operation string                    `json:"operation"`
+	Label     string                    `json:"label,omitempty"`
+	BlockID   string                    `json:"block_id,omitempty"`
+	Blocks    []string                  `json:"blocks,omitempty"`
+	Witnesses map[string]PendingWitness `json:"witnesses,omitempty"`
+}
+
+// PendingWitness records only native ownership and process identity before a
+// multi-block show operation. It contains no terminal contents or command argv.
+type PendingWitness struct {
+	Label          string `json:"label"`
+	HostID         string `json:"host_id"`
+	ChildPID       int    `json:"child_pid"`
+	ChildPath      string `json:"child_path"`
+	ForegroundPID  int    `json:"foreground_pid,omitempty"`
+	ForegroundPath string `json:"foreground_path,omitempty"`
+	Exited         bool   `json:"exited,omitempty"`
 }
 type State struct {
 	Schema         int                        `json:"schema"`
@@ -169,15 +183,145 @@ func (m *Manager) withState(ctx context.Context, c Context, mutate bool, fn func
 				s.Context.Repository = c.Repository
 			}
 		}
-		if mutate && s.Pending != nil {
-			return fmt.Errorf("interrupted %s operation; inspect pending IDs in %s before retrying; live work was preserved", s.Pending.Operation, path)
-		}
 		v, err := m.Rex.View(ctx, c.Session)
 		if err != nil {
 			return err
 		}
+		if mutate && s.Pending != nil {
+			recovered, err := m.reconcileExitedApp(ctx, &s, i, v, path)
+			if err != nil {
+				return err
+			}
+			if !recovered {
+				return fmt.Errorf("interrupted %s operation; inspect pending IDs in %s before retrying; live work was preserved", s.Pending.Operation, path)
+			}
+		}
 		return fn(&s, i, v, path)
 	})
+}
+
+func pendingWitness(block rex.Block, process rex.Process) PendingWitness {
+	w := PendingWitness{Label: block.Label, HostID: block.HostID, Exited: len(process.LastExit) > 0 && string(process.LastExit) != "null"}
+	if process.Child != nil {
+		w.ChildPID, w.ChildPath = process.Child.PID, process.Child.Path
+	}
+	if process.Foreground != nil {
+		w.ForegroundPID, w.ForegroundPath = process.Foreground.PID, process.Foreground.Path
+	}
+	return w
+}
+
+func (w PendingWitness) verified() bool {
+	if w.Label == "" || w.HostID == "" {
+		return false
+	}
+	if w.Exited {
+		return w.ChildPID == 0 && w.ChildPath == "" && w.ForegroundPID == 0 && w.ForegroundPath == ""
+	}
+	return w.ChildPID > 0 && filepath.IsAbs(w.ChildPath) &&
+		((w.ForegroundPID == 0 && w.ForegroundPath == "") || (w.ForegroundPID > 0 && filepath.IsAbs(w.ForegroundPath)))
+}
+
+// reconcileExitedApp clears only a known app journal whose returned/bound
+// surface no longer exists. It performs no native mutation or automatic retry.
+// Unknown creation IDs, other terminal roles and partially changed show work
+// retain their journal for explicit inspection.
+func (m *Manager) reconcileExitedApp(ctx context.Context, s *State, i rex.Identity, v rex.View, path string) (bool, error) {
+	p := s.Pending
+	if p.BlockID == "" || p.BlockID == s.MainBlock || p.BlockID == s.LocalBlock {
+		return false, nil
+	}
+	for _, terminal := range s.Terminals {
+		if terminal.Binding.BlockID == p.BlockID {
+			return false, nil
+		}
+	}
+	kind := ""
+	if strings.HasPrefix(p.Operation, "open ") {
+		kind = strings.TrimPrefix(p.Operation, "open ")
+		if p.Label == "" || !strings.HasPrefix(p.Label, "rexapp:"+kind+":") {
+			return false, nil
+		}
+		if b, exists := s.Apps[kind]; exists && b.BlockID != p.BlockID {
+			return false, nil
+		}
+	} else if p.Operation == "hide" || p.Operation == "show" {
+		for name, binding := range s.Apps {
+			if binding.BlockID == p.BlockID {
+				kind = name
+			}
+		}
+	} else {
+		return false, nil
+	}
+	if definition, registered := m.definitions[kind]; !registered || definition.ID != kind {
+		return false, nil
+	}
+	for name, binding := range s.Apps {
+		if binding.BlockID == p.BlockID && name != kind {
+			return false, nil
+		}
+	}
+	visible := v.Blocks()
+	if _, exists := visible[p.BlockID]; exists {
+		return false, nil
+	}
+	inventory, err := m.inventory(ctx, s.Context.Session)
+	if err != nil {
+		return false, err
+	}
+	if _, exists := inventory[p.BlockID]; exists {
+		return false, nil
+	}
+	if p.Operation == "show" {
+		if len(p.Blocks) == 0 || len(p.Witnesses) != len(p.Blocks) {
+			return false, nil
+		}
+		seen := map[string]bool{}
+		for _, bid := range p.Blocks {
+			if seen[bid] {
+				return false, nil
+			}
+			seen[bid] = true
+			witness, exists := p.Witnesses[bid]
+			if !exists || !witness.verified() || witness.HostID != i.HostID {
+				return false, nil
+			}
+			block, survives := inventory[bid]
+			if !survives {
+				if _, visible := visible[bid]; visible {
+					return false, nil
+				}
+				continue
+			}
+			if _, shown := visible[bid]; !shown || block.Placement != "placed" {
+				return false, nil
+			}
+			process, err := m.Rex.Process(ctx, s.Context.Session, bid)
+			if err != nil {
+				return false, err
+			}
+			if pendingWitness(block, process) != witness {
+				return false, nil
+			}
+		}
+		if !seen[p.BlockID] {
+			return false, nil
+		}
+	}
+	s.forgetApp(kind)
+	s.Pending = nil
+	s.LastShape = shape(s, v)
+	return true, storage.WriteJSON(path, s)
+}
+
+func (s *State) forgetApp(kind string) {
+	delete(s.Apps, kind)
+	delete(s.Hidden, kind)
+	delete(s.Placements, kind)
+	if len(s.Hidden) == 0 {
+		s.Placements = map[string]Placement{}
+	}
 }
 
 func (s *State) validate() error {

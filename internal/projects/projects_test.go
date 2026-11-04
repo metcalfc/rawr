@@ -26,6 +26,7 @@ type nativeFake struct {
 	view         rex.View
 	blocks       map[string]rex.Block
 	process      map[string]rex.Process
+	closeOnExit  map[string]bool
 	calls        []string
 	next         int
 	viewCalls    int
@@ -178,8 +179,13 @@ func (f *nativeFake) createNode(n map[string]any) *rex.LayoutNode {
 		f.next++
 		bid := fmt.Sprintf("block:%d", f.next)
 		f.blocks[bid] = rex.Block{ID: bid, Label: b["label"].(string), HostID: "host:local", Flavor: "com.superlogical.terminal.shell", Placement: "tiled"}
+		if f.closeOnExit == nil {
+			f.closeOnExit = map[string]bool{}
+		}
+		options := b["options"].(map[string]any)
+		f.closeOnExit[bid] = options["exit"].(map[string]any)["on_completion"].(bool)
 		path := "/bin/sh"
-		if argv, ok := b["options"].(map[string]any)["command"].([]any); ok {
+		if argv, ok := options["command"].([]any); ok {
 			path = argv[0].(string)
 		}
 		f.process[bid] = rex.Process{Child: &rex.ProcessInfo{PID: 100 + f.next, Name: filepath.Base(path), Path: path, Argv0: path}}

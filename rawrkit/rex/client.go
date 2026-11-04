@@ -34,6 +34,15 @@ func New(executable, server, clientID string) *Client {
 		executable = os.Getenv("REXAPPS_REX")
 	}
 	if executable == "" {
+		// Rex exports the directory of the CLI that matches the server running
+		// this terminal. Prefer it to whichever rex happens to be on PATH.
+		if dir := os.Getenv("REX_BIN_DIR"); dir != "" {
+			if candidate := filepath.Join(dir, "rex"); isExecutable(candidate) {
+				executable = candidate
+			}
+		}
+	}
+	if executable == "" {
 		executable, _ = exec.LookPath("rex")
 	}
 	if executable == "" && runtime.GOOS == "darwin" {
@@ -46,6 +55,10 @@ func New(executable, server, clientID string) *Client {
 		server = os.Getenv("RAWR_SERVER")
 	}
 	return &Client{Executable: executable, Server: server, ClientID: clientID, revisions: map[string]int{}}
+}
+func isExecutable(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && !info.IsDir() && info.Mode()&0o111 != 0
 }
 func defaultRun(ctx context.Context, exe string, args []string) ([]byte, []byte, error) {
 	cmd := exec.CommandContext(ctx, exe, args...)
@@ -225,10 +238,36 @@ func (c *Client) Inventory(ctx context.Context, sid string) ([]Block, error) {
 	}
 	return result.Blocks, nil
 }
+// TerminalCreator names the block creator whose methods rawrkit relies on.
+const TerminalCreator = "com.superlogical.terminal"
+
+// TerminalMethod calls a terminal block method through the server API by its
+// creator-qualified name. Rex rejects the call with conflict when the block
+// was not made by the terminal creator, so a replaced block cannot answer.
+func (c *Client) TerminalMethod(ctx context.Context, sid, bid, method string, args any, out any) error {
+	if args == nil {
+		args = map[string]any{}
+	}
+	return c.Call(ctx, TerminalCreator+"."+method, map[string]any{"session_id": sid, "block_id": bid, "args": args}, out)
+}
 func (c *Client) Process(ctx context.Context, sid, bid string) (Process, error) {
 	var p Process
-	err := c.Run(ctx, []string{"block", "call", "-s", sid, "-b", bid, "process"}, &p)
+	err := c.TerminalMethod(ctx, sid, bid, "process", nil, &p)
 	return p, err
+}
+
+// Screen reports whether the terminal shows its primary or alternate screen.
+func (c *Client) Screen(ctx context.Context, sid, bid string) (string, error) {
+	var modes struct {
+		Screen string `json:"screen"`
+	}
+	err := c.TerminalMethod(ctx, sid, bid, "modes", nil, &modes)
+	return modes.Screen, err
+}
+
+// SetBlockLabel sets a block's human-readable display label.
+func (c *Client) SetBlockLabel(ctx context.Context, sid, bid, label string) error {
+	return c.Call(ctx, "session.set_block_label", map[string]any{"session_id": sid, "block_id": bid, "label": label}, nil)
 }
 func (c *Client) Select(ctx context.Context, sid, bid string) error {
 	var result struct {
@@ -255,7 +294,9 @@ func (c *Client) Select(ctx context.Context, sid, bid string) error {
 		return fmt.Errorf("multiple Rex apps connected; choose --client")
 	}
 	if client != "" {
-		if err := c.Run(ctx, []string{"-C", client, "do", "session.select", "session_id=" + sid, "--json"}, nil); err != nil {
+		// Ask the app to show the session. client.perform reports refused or
+		// not_supported when the app declines, e.g. without Remote Control.
+		if err := c.Call(ctx, "client.perform", map[string]any{"client_id": client, "action": "session.select", "args": map[string]any{"session_id": sid}, "session_id": sid}, nil); err != nil {
 			return err
 		}
 	}
@@ -264,8 +305,20 @@ func (c *Client) Select(ctx context.Context, sid, bid string) error {
 	}
 	return nil
 }
+
+// Leaf retains a work terminal's surface after its program exits.
 func Leaf(label string, argv []string, cwd string) map[string]any {
-	options := map[string]any{"cwd": cwd, "exit": map[string]any{"on_completion": false}}
+	return terminalLeaf(label, argv, cwd, false)
+}
+
+// AppLeaf lets Rex close a dedicated resource pane when its program exits.
+// Rex's default quick-failure threshold remains in effect to retain startup errors.
+func AppLeaf(label string, argv []string, cwd string) map[string]any {
+	return terminalLeaf(label, argv, cwd, true)
+}
+
+func terminalLeaf(label string, argv []string, cwd string, closeOnExit bool) map[string]any {
+	options := map[string]any{"cwd": cwd, "exit": map[string]any{"on_completion": closeOnExit}}
 	if len(argv) > 0 {
 		options["command"] = argv
 		options["shell"] = "none"

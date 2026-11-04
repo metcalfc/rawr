@@ -29,6 +29,8 @@ Captured from the actual Rex GUI: launch the three commands from a work terminal
 
 Arrows and mouse selection browse; they do not launch work. `?` shows context help and `r` refreshes with loading/cached/error status. Running a command opens or focuses its existing pane; `--toggle` hides/shows it while retaining the process. Tools stay anchored to the project when focus moves to another terminal or SSH shell.
 
+**Current source after v0.2.0:** `q`/Esc backs out of details, then quits the app and lets Rex remove its managed resource pane. Quick launch failures stay visible; `--hide`/`--toggle` keep the app running. Standalone `--tui` returns to its terminal. Existing panes need an explicit close/reopen once to pick up the new launch behavior; published v0.2.0 is unchanged.
+
 Successful pane actions are silent. Add `--verbose` (or `-v`) for their JSON details; `--status` always prints JSON and errors go to stderr. Rawr's optional project commands keep their structured output.
 
 ## Install v0.2.0
@@ -61,14 +63,14 @@ Use `exerawr --local` from the same local context to return retained local work 
 
 Already-running app processes keep their original UI code. Building or installing does not hot-upgrade them; use a fresh Rex session or explicitly reopen the tool panes you intend to update.
 
-To build from a source checkout instead:
+To use current source changes, including close-on-exit, build from the [main source checkout](https://github.com/metcalfc/rawr/tree/main):
 
 ```sh
 make build
 export PATH="$PWD/build/bin:$PATH"
 ```
 
-Release archives contain ready-to-run apps and public guides. Build commands use the [source checkout](https://github.com/metcalfc/rawr/tree/v0.2.0), which also contains the Makefile and verification scripts.
+Release archives contain ready-to-run apps and public guides from their release commit. The source checkout also contains the Makefile and verification scripts; the v0.2.0 tag and downloads remain unchanged.
 
 ## Build another resource pane
 

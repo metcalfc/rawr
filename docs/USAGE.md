@@ -6,6 +6,8 @@ Full usage and distribution details. Run checkout examples from the repository r
 
 The controls below describe **v0.2.0**. It adds Changes and filename/list filters, repository-wide open PR/issue views, central file/diff opening, guarded PR checkout and explicit VM actions to the earlier v0.1.0 UI.
 
+The close-on-exit behavior described below is a **current source change after v0.2.0**. It is not included in the published v0.2.0 binaries or tag.
+
 Successful standalone pane actions are now silent. Scripts consuming v0.1.0 lifecycle JSON must add `--verbose` (or `-v`); `--status` continues to print JSON. Rawr project subcommands retain their structured output. Existing app processes keep their original code until explicitly reopened; installing new binaries does not restart live work. The README animation captures an actual native Rex workflow with labelled fixture providers. A separate optional VHS tour shows the standalone UIs.
 
 Three standalone Go commands open independent native Rex panes:
@@ -72,6 +74,8 @@ export PATH="$PWD/build/bin:$PATH"
 ghrawr --version
 ```
 
+For close-on-exit, run those build commands in the [current main source checkout](https://github.com/metcalfc/rawr/tree/main) instead. Installing new binaries does not change an existing pane's native launch options; explicitly close the old resource pane in Rex and launch it again once.
+
 `make install PREFIX="$HOME/.local"` installs all four current binaries under `PREFIX/bin`. `make install-compat` also builds/updates the three old command-name entry points; release bundles contain only the current four names. The Go output is separate from the retained Python `bin/rawr` reference. Put `build/bin` or the install directory first in PATH when trying the Go commands.
 
 Use the bundled Rex CLI automatically on macOS, a `rex` executable in PATH, or pass its path explicitly:
@@ -122,13 +126,15 @@ ghrawr --tui --root /absolute/path/to/checkout --repo OWNER/NAME
 exerawr --tui
 ```
 
-`--tui` needs an interactive terminal. Outside Rex, selecting a VM temporarily gives that same terminal to SSH and returns to the selector when SSH exits. It requires neither Rex nor Rawr. Run `COMMAND --help` for the complete shared flags.
+`--tui` needs an interactive terminal. Quitting it returns control to that terminal without closing its hosting shell. Outside Rex, selecting a VM temporarily gives that same terminal to SSH and returns to the selector when SSH exits. It requires neither Rex nor Rawr. Run `COMMAND --help` for the complete shared flags.
 
 ## Shared browsing and status
 
 Arrows or `j`/`k` and mouse selection browse rows without launching them. Enter performs the view's explicit action. `?` opens contextual help; `r` refreshes. The status distinguishes an in-progress refresh, successful update and cached/stale data after an error. Error details stay visible rather than making a failed read look like an empty result.
 
 Filter controls belong to the active view: `/` edits a filter, Enter applies, Escape cancels the edit and Ctrl-U clears it. GitHub filters the loaded list; file filtering matches filenames, not file contents. `q`/Escape leaves a detail/preview/help view before exiting the app.
+
+With **current source after v0.2.0**, quitting a newly launched managed resource app lets Rex remove that app's pane. Quick launch failures remain visible for inspection. `--hide` and `--toggle` retain the running process for later reuse. Local work, SSH shells and central file viewers keep their existing surface-preservation behavior. Already-running panes keep their original launch options until explicitly closed and recreated.
 
 ## GitHub: choose a PR or issue
 
@@ -205,6 +211,8 @@ rawr show demo
 ```
 
 `create` registers a project without opening Rex or contacting providers. The initial arrangement has a file pane left, work in the center, and independent GitHub/exe.dev panes stacked right. Use `--apps filerawr,ghrawr` for a subset, or `--apps=` for a shell only. `--vm EXISTING_NAME` records an initial VM link. `rawr link` verifies an existing VM through a read-only listing and changes the saved link; it does not switch a live shell. The default CLI's TUI does not install the optional `l` link callback.
+
+In current source after v0.2.0, newly created resource panes from Rawr's initial open or restore also close when their app exits. Existing live panes retain their launch options; opening or restoring does not replace them to change this setting.
 
 Opening an already live project selects it and preserves the current arrangement and hidden tools. Only `save` records live geometry; `save --expected-revision N` protects against a stale writer. Unrecognized live programs are retained and saved as shell placeholders, since their processes and conversations cannot be reconstructed from a layout.
 

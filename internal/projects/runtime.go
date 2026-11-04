@@ -161,9 +161,17 @@ func (m *Manager) preflight(p Project, roles []string) error {
 }
 func (m *Manager) nativeLayout(p Project, n *Node, labels map[string]string) map[string]any {
 	if n.Role != "" {
-		return rex.Leaf(labels[n.Role], m.command(p, n.Role), p.Roles[n.Role].Cwd)
+		return m.roleLeaf(p, n.Role, labels[n.Role])
 	}
 	return map[string]any{"split": map[string]any{"direction": n.Direction, "ratio": n.Ratio, "before": m.nativeLayout(p, n.Before, labels), "after": m.nativeLayout(p, n.After, labels)}}
+}
+
+func (m *Manager) roleLeaf(p Project, role, label string) map[string]any {
+	leaf := rex.Leaf
+	if isApp(p.Roles[role].Kind) {
+		leaf = rex.AppLeaf
+	}
+	return leaf(label, m.command(p, role), p.Roles[role].Cwd)
 }
 func rolesInSetup(p Project) []string {
 	var roles []string

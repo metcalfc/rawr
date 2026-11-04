@@ -95,8 +95,7 @@ func (m *Manager) action(ctx context.Context, c Context, kind, action string) (R
 			}
 			// Missing inventory means an explicitly closed surface. A detached one
 			// was handled above, and must never be mistaken for missing work.
-			delete(s.Apps, kind)
-			delete(s.Hidden, kind)
+			s.forgetApp(kind)
 		}
 		if action == "hide" {
 			out = Result{"complete", "", false, false}
@@ -166,7 +165,7 @@ func (m *Manager) launch(ctx context.Context, s *State, i rex.Identity, v rex.Vi
 		}
 	}
 	var created rex.Created
-	err = m.Rex.Call(ctx, "session.new_split", map[string]any{"session_id": s.Context.Session, "anchor_id": anchor, "direction": direction, "side": side, "ratio": ratio, "focus": false, "layout": rex.Leaf(label, append(argv, "--tui", "--context-file", ctxPath), s.Context.Root)}, &created)
+	err = m.Rex.Call(ctx, "session.new_split", map[string]any{"session_id": s.Context.Session, "anchor_id": anchor, "direction": direction, "side": side, "ratio": ratio, "focus": false, "layout": rex.AppLeaf(label, append(argv, "--tui", "--context-file", ctxPath), s.Context.Root)}, &created)
 	if err != nil {
 		return Result{}, err
 	}

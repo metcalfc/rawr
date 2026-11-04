@@ -299,7 +299,7 @@ func (a *application) helpLines() []string {
 	if a.status.Error != "" && a.status.Error != a.message {
 		lines = append(lines, "Refresh error: "+a.status.Error, "")
 	}
-	lines = append(lines, "↑/↓ or j/k    Browse without opening or changing work", "Home/End      First/last row", "PgUp/PgDn     Scroll", "r             Refresh (last good rows survive errors)", "?             Show/close this help", "Esc / q       Back from details, otherwise quit this app", "", "Rex owns pane focus and layout. Use your Rex keybindings.", "--hide / --toggle retain the running app; q exits it.", "The project root remains anchored when focus changes.", "")
+	lines = append(lines, "↑/↓ or j/k    Browse without opening or changing work", "Home/End      First/last row", "PgUp/PgDn     Scroll", "r             Refresh (last good rows survive errors)", "?             Show/close this help", "Esc / q       Back from details, otherwise quit this app", "", "Rex owns pane focus and layout. Use your Rex keybindings.", "--hide / --toggle retain the running app.", "Quitting a managed resource app closes its Rex pane.", "The project root remains anchored when focus changes.", "")
 	switch a.kind {
 	case "ghrawr":
 		lines = append(lines, "1 / 2         Pull requests / issues", "/             Filter the visible resource list", "Enter / o     Open selected PR or issue in your browser", "c             Inspect checks for selected PR", "x             Checkout selected PR after y/n confirmation", "Checkout requires the matching clean local project.", "In Rex, return to idle original local work first.")

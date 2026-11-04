@@ -6,6 +6,8 @@ The SDK is part of the Go module `github.com/metcalfc/rawr`. Import the subpacka
 
 **Version scope:** this guide describes **v0.2.0**, including `RunLocalAction`, the status/document helpers and the file/PR resource workflows. v0.1.0 contains the earlier pane/UI SDK. The [main demo](../assets/demo.gif) captures the real Rex GUI: the three commands open native resource panes from an existing work terminal, and a selected local file opens in the center. Its provider data are fixtures; it does not demonstrate a live-provider checkout, browser action or SSH connection. The [optional standalone VHS tour](https://github.com/metcalfc/rawr/blob/main/assets/standalone-demo.gif) is separate. See [capture methods](https://github.com/metcalfc/rawr/tree/main/demos) and [verification](VERIFICATION.md) for their scope.
 
+**Current source after v0.2.0** adds close-on-exit for newly hosted resource apps. That behavior is not part of the published v0.2.0 SDK pin below; use the current source checkout for it.
+
 In your own Go module, pin the SDK with:
 
 ```sh
@@ -82,6 +84,10 @@ build/bin/noterawr --toggle --root /absolute/path/to/checkout
 It is an example app, rather than a fifth default release executable. Its source is included in release bundles for reference; the build commands above require the source checkout. An independent module can also copy that example and use the pinned SDK dependency.
 
 Use the same canonical root, session, scope and state directory for apps sharing a workspace. `Open` opens/focuses, `Hide` detaches the surface while keeping its process, `Toggle` hides/shows and `Snapshot` inspects bindings/visibility. A running app is reused through its recorded native identity and process fingerprint. Changed, occupied or ambiguous work is preserved and reported, with interrupted operations retained in a journal.
+
+In current source after v0.2.0, managed resource launches use `rex.AppLeaf`, which sets Rex's `exit.on_completion=true`. The default 250 ms quick-exit guard is retained so quick launch failures stay visible. Rex removes the owned resource pane after the app exits; the built-in `q`/Escape controls first leave details/help, then quit. `Hide`/`Toggle` keep the process running. Generic `rex.Leaf` terminals for local work, SSH and file viewers retain surfaces on exit. Standalone `--tui` only returns control to its hosting terminal.
+
+Launch options are not changed on already-running panes: no runtime setter is verified. Explicitly close/recreate an old resource pane once to use the new behavior. Rawr's new initial/open/restore resource panes use it too, while live panes and working terminals are preserved.
 
 ## Optional terminal UI helpers
 

@@ -391,6 +391,16 @@ func TestLostCreationReplyLeavesJournalAndBlocksSecondCreate(t *testing.T) {
 	if err != nil || snapshot.Pending == nil || snapshot.Pending.Label == "" {
 		t.Fatalf("missing reviewable journal: %+v %v", snapshot, err)
 	}
+	// Even if that unseen creation subsequently exits, its lost reply never
+	// established a returned block ID. Absence cannot authorize a retry.
+	for id := range f.blocks {
+		if id != "main" {
+			f.appExited(id)
+		}
+	}
+	if _, err = m.Open(ctx, c, "exerawr"); err == nil || !strings.Contains(err.Error(), "interrupted") || f.count("session.new_split") != 1 {
+		t.Fatalf("unknown creation was retried after disappearing: %v", err)
+	}
 	f.assertNoDestructiveCalls(t)
 }
 

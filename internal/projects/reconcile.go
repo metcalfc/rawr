@@ -333,7 +333,7 @@ func (m *Manager) launchRole(ctx context.Context, p Project, o *observed, i rex.
 		return "", err
 	}
 	var created rex.Created
-	err = m.Rex.Call(ctx, "session.new_split", map[string]any{"session_id": o.SessionID, "anchor_id": anchor, "direction": "horizontal", "side": "after", "ratio": .7, "layout": rex.Leaf(label, m.command(p, role), p.Roles[role].Cwd), "focus": false}, &created)
+	err = m.Rex.Call(ctx, "session.new_split", map[string]any{"session_id": o.SessionID, "anchor_id": anchor, "direction": "horizontal", "side": "after", "ratio": .7, "layout": m.roleLeaf(p, role, label), "focus": false}, &created)
 	if err != nil {
 		return "", err
 	}
