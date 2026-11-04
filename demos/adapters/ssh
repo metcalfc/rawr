@@ -1,0 +1,13 @@
+#!/bin/sh
+# Fixture adapter: discovery only. Never delegates to SSH or reads credentials.
+set -eu
+discovery=false
+for argument do
+    [ "$argument" != --json ] || discovery=true
+done
+if [ "$discovery" = true ]; then
+    cat "$RAWR_DEMO_FIXTURES/machines.json"
+else
+    printf 'Demo fixture: no remote shell or network connection was opened.\n' >&2
+    exit 2
+fi

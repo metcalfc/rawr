@@ -1,0 +1,11 @@
+#!/bin/sh
+# Fixture adapter: this file never invokes gh, a browser, or any network client.
+set -eu
+if [ "$#" -ge 2 ] && [ "$1" = pr ] && [ "$2" = list ]; then
+    cat "$RAWR_DEMO_FIXTURES/pull-requests.json"
+elif [ "$#" -ge 3 ] && [ "$1" = pr ] && [ "$2" = checks ] && [ "$3" = 42 ]; then
+    cat "$RAWR_DEMO_FIXTURES/checks.json"
+else
+    printf 'Demo fixture only: unsupported gh request.\n' >&2
+    exit 2
+fi

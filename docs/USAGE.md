@@ -18,7 +18,34 @@ Build another app with `github.com/metcalfc/rawr/rawrkit`; its optional `rawrkit
 
 The earlier names `ghrex`, `filerex` and `exerex` are compatibility names for existing installations. New builds and release bundles use `ghrawr`, `filerawr` and `exerawr`. See the [public verification summary](VERIFICATION.md) for current coverage and the [SDK guide](RAWRKIT.md) for its API.
 
-## Build or install
+## Download prebuilt binaries
+
+The [latest release](https://github.com/metcalfc/rawr/releases/latest) provides macOS and Linux archives with all four commands. Go is not required on the destination. Choose the matching v0.1.0 archive:
+
+| Platform | Archive |
+| --- | --- |
+| macOS, Apple Silicon | `rawr-apps_v0.1.0_darwin_arm64.tar.gz` |
+| macOS, Intel | `rawr-apps_v0.1.0_darwin_amd64.tar.gz` |
+| Linux, ARM64 | `rawr-apps_v0.1.0_linux_arm64.tar.gz` |
+| Linux, x86-64 | `rawr-apps_v0.1.0_linux_amd64.tar.gz` |
+
+For example, on an Apple Silicon Mac:
+
+```sh
+rawr_version=v0.1.0
+rawr_archive="rawr-apps_${rawr_version}_darwin_arm64.tar.gz"
+rawr_release_url="https://github.com/metcalfc/rawr/releases/download/${rawr_version}"
+curl -fLO "$rawr_release_url/$rawr_archive"
+curl -fLO "$rawr_release_url/SHA256SUMS"
+grep -F "  $rawr_archive" SHA256SUMS | shasum -a 256 -c -
+tar -xzf "$rawr_archive"
+export PATH="$PWD/rawr-apps_${rawr_version}_darwin_arm64:$PATH"
+ghrawr --version
+```
+
+On Linux, use `sha256sum -c -` in place of `shasum -a 256 -c -`. You can copy the selected executables into any directory on PATH. Native Rex acceptance remains macOS-only; Linux artifacts are cross-compiled builds. Existing `git`/`gh` or SSH tools/authentication are still needed for their corresponding apps.
+
+## Build or install from source
 
 The module requires Go 1.24 or later; the current verification uses **Go 1.27.1**. Run from this checkout:
 
@@ -111,7 +138,7 @@ make sdk-smoke
 make release VERSION=dev
 ```
 
-`dist/` receives `rawr-apps_VERSION_OS_ARCH` bundles for the default targets: macOS and Linux, each arm64 and amd64. Every bundle contains `ghrawr`, `filerawr`, `exerawr`, `rawr`, the README and logo, public guides, the noterawr example source, third-party license texts, a license manifest, build metadata and binary SHA-256 checksums. `dist/SHA256SUMS` checksums the archives. The release builder uses an explicit public-file list, Go's standard library, `CGO_ENABLED=0`, `-trimpath` and literal build arguments. `make sdk-smoke` compiles a separate consumer module using only the public SDK imports and a custom app ID.
+`dist/` receives `rawr-apps_VERSION_OS_ARCH` bundles for the default targets: macOS and Linux, each arm64 and amd64. Every bundle contains `ghrawr`, `filerawr`, `exerawr`, `rawr`, the README, logo and demo GIF, public guides, the noterawr example source, third-party license texts, a license manifest, build metadata and binary SHA-256 checksums. `dist/SHA256SUMS` checksums the archives. The release builder uses an explicit public-file list, Go's standard library, `CGO_ENABLED=0`, `-trimpath` and literal build arguments. `make sdk-smoke` compiles a separate consumer module using only the public SDK imports and a custom app ID.
 
 Extract the matching archive, check its SHA-256, and copy whichever executables you need into PATH. Go is not required on the destination. Services still require their normal external tools (`git`/`gh` or `ssh`), and native panes require the verified Rex installation.
 
@@ -123,4 +150,14 @@ make release VERSION=dev TARGETS=darwin/arm64,linux/amd64
 make release VERSION=dev TARGETS=windows/amd64,windows/arm64
 ```
 
-The workflow in `.github/workflows/go.yml` runs Go/SDK checks and uploads build artifacts; it does not publish releases. Current API details are in [RAWRKIT.md](RAWRKIT.md); coverage and remaining platform gaps are in the [public verification summary](VERIFICATION.md).
+For a versioned release build, use the reviewed full source commit and a fresh output directory:
+
+```sh
+go run ./scripts/release.go -version v0.1.0 -commit FULL_SOURCE_COMMIT \
+  -targets darwin/arm64,darwin/amd64,linux/arm64,linux/amd64 \
+  -out dist/v0.1.0
+```
+
+Every binary and `BUILD-INFO.json` records that version/commit. Publish only those four fresh archives and their adjacent `SHA256SUMS`; older local development archives are separate artifacts. The script builds and checksums locally; it does not create tags or upload releases.
+
+The workflow in `.github/workflows/go.yml` runs Go/SDK checks and uploads build artifacts; it does not publish releases. The [VHS demo source and reproduction steps](https://github.com/metcalfc/rawr/tree/main/demos) record actual `--tui` apps with sample provider data. Current API details are in [RAWRKIT.md](RAWRKIT.md); coverage and remaining platform gaps are in the [public verification summary](VERIFICATION.md).

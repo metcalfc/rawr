@@ -1,0 +1,6 @@
+[
+  {"name": "Go tests", "bucket": "pass", "state": "SUCCESS", "link": ""},
+  {"name": "Pane safety", "bucket": "pass", "state": "SUCCESS", "link": ""},
+  {"name": "macOS build", "bucket": "pass", "state": "SUCCESS", "link": ""},
+  {"name": "Linux build", "bucket": "pending", "state": "IN_PROGRESS", "link": ""}
+]

@@ -1,0 +1,7 @@
+{
+  "vms": [
+    {"vm_name": "demo-api", "status": "running", "ssh_dest": "demo-api.invalid", "https_url": "https://demo-api.invalid"},
+    {"vm_name": "demo-worker", "status": "running", "ssh_dest": "demo-worker.invalid", "https_url": "https://demo-worker.invalid"},
+    {"vm_name": "demo-sandbox", "status": "stopped", "ssh_dest": "demo-sandbox.invalid", "https_url": "https://demo-sandbox.invalid"}
+  ]
+}

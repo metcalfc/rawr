@@ -15,9 +15,15 @@ Rawr is a family of Go apps for [Rex](https://www.superlogical.com/rex). Run one
 | `exerawr` | Pick an existing exe.dev VM and put its SSH shell in the center. |
 | `rawr` *(optional)* | Open named projects and deliberately save or restore their setups. |
 
+![Rawr terminal app demo](assets/demo.gif)
+
+Standalone terminal UIs with sample GitHub and VM data. [Reproduce the VHS demo](https://github.com/metcalfc/rawr/tree/main/demos).
+
 ## Get the little helpers
 
-With Go 1.24 or later (tested with Go 1.27.1):
+Download the [latest macOS and Linux binaries](https://github.com/metcalfc/rawr/releases/latest) for arm64 or amd64. Each archive includes all four commands and checksums; Go is not needed to run them. See [download and verification instructions](docs/USAGE.md#download-prebuilt-binaries).
+
+Or install with Go 1.24 or later (tested with Go 1.27.1):
 
 ```sh
 go install github.com/metcalfc/rawr/cmd/filerawr@latest

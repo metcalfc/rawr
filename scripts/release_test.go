@@ -107,15 +107,16 @@ func TestChecksumsMatchBytesAndSortNames(t *testing.T) {
 	}
 }
 
-func TestPublicBundleIncludesLogoAndExcludesLocalCaptures(t *testing.T) {
+func TestPublicBundleIncludesReadmeMediaAndExcludesLocalCaptures(t *testing.T) {
 	source, bundle := t.TempDir(), t.TempDir()
 	want := map[string]string{
-		"README.md":                 `<img src="assets/rawr-logo.png" alt="Rawr" width="220">`,
+		"README.md":                 "<img src=\"assets/rawr-logo.png\" alt=\"Rawr\" width=\"220\">\n![Rawr demo](assets/demo.gif)",
 		"docs/RAWRKIT.md":           "public SDK guide",
 		"docs/USAGE.md":             "public usage guide",
 		"docs/VERIFICATION.md":      "public verification summary",
 		"docs/BRANDING.md":          "public artwork provenance",
 		"assets/rawr-logo.png":      "public logo fixture",
+		"assets/demo.gif":           "public demo fixture",
 		"examples/noterawr/main.go": "package main",
 	}
 	write := func(name, value string) {
@@ -165,6 +166,6 @@ func TestPublicBundleIncludesLogoAndExcludesLocalCaptures(t *testing.T) {
 		t.Fatal(err)
 	}
 	if count != len(want) {
-		t.Fatalf("bundle copied %d public files, want %d (including README logo)", count, len(want))
+		t.Fatalf("bundle copied %d public files, want %d (including README logo and demo)", count, len(want))
 	}
 }
