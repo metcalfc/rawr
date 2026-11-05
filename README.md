@@ -18,25 +18,25 @@ The optional `rawr` command manages projects and saved setups.
 
 ![Rawr panes opening in Rex, then closing with q](assets/demo.gif)
 
-*Demo uses current source and fixture data.*
+*Native Rex demo with fixture data.*
 
 ## Install
 
-Install current source with Go 1.24+ for the behavior shown above:
+[Download v0.2.1 for macOS/Linux](https://github.com/metcalfc/rawr/releases/tag/v0.2.1), or install with Go 1.24+:
 
 ```sh
-go install github.com/metcalfc/rawr/cmd/ghrawr@main
-go install github.com/metcalfc/rawr/cmd/filerawr@main
-go install github.com/metcalfc/rawr/cmd/exerawr@main
-go install github.com/metcalfc/rawr/cmd/rawr@main # optional
+go install github.com/metcalfc/rawr/cmd/ghrawr@v0.2.1
+go install github.com/metcalfc/rawr/cmd/filerawr@v0.2.1
+go install github.com/metcalfc/rawr/cmd/exerawr@v0.2.1
+go install github.com/metcalfc/rawr/cmd/rawr@v0.2.1 # optional
 ```
 
-[Prebuilt v0.2.0 binaries for macOS/Linux](https://github.com/metcalfc/rawr/releases/tag/v0.2.0) are also available; they predate close-on-quit. See the [setup and usage guide](docs/USAGE.md) for Rex compatibility and dependencies.
+See the [setup and usage guide](docs/USAGE.md) for Rex compatibility and dependencies.
 
 ## Write your own
 
 Use [rawrkit](docs/RAWRKIT.md) for shared pane behavior and terminal UI. Start with the [noterawr example](examples/noterawr/main.go) and replace its resources and actions.
 
 ```sh
-go get github.com/metcalfc/rawr@main
+go get github.com/metcalfc/rawr@v0.2.1
 ```

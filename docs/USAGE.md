@@ -4,9 +4,9 @@ Full usage and distribution details. Run checkout examples from the repository r
 
 ## Version and upgrade notes
 
-The controls below describe **v0.2.0**. It adds Changes and filename/list filters, repository-wide open PR/issue views, central file/diff opening, guarded PR checkout and explicit VM actions to the earlier v0.1.0 UI.
+The controls below describe **v0.2.1**, which adds native close-on-exit for resource apps. It retains v0.2.0's Changes and filename/list filters, repository-wide open PR/issue views, central file/diff opening, guarded PR checkout and explicit VM actions.
 
-The close-on-exit behavior described below is a **current source change after v0.2.0**. It is not included in the published v0.2.0 binaries or tag.
+When upgrading from v0.2.0, existing native panes keep their original launch options. Explicitly close and reopen a resource pane once to enable v0.2.1 close-on-exit. The v0.2.0 tag and archives remain unchanged.
 
 Successful standalone pane actions are now silent. Scripts consuming v0.1.0 lifecycle JSON must add `--verbose` (or `-v`); `--status` continues to print JSON. Rawr project subcommands retain their structured output. Existing app processes keep their original code until explicitly reopened; installing new binaries does not restart live work. The README animation captures an actual native Rex workflow with labelled fixture providers. A separate optional VHS tour shows the standalone UIs.
 
@@ -28,19 +28,19 @@ The earlier names `ghrex`, `filerex` and `exerex` are compatibility names for ex
 
 ## Download prebuilt binaries
 
-The [v0.2.0 release](https://github.com/metcalfc/rawr/releases/tag/v0.2.0) provides macOS and Linux archives with all four commands. Go is not required on the destination. Choose the matching archive:
+The [v0.2.1 release](https://github.com/metcalfc/rawr/releases/tag/v0.2.1) provides macOS and Linux archives with all four commands. Go is not required on the destination. Choose the matching archive:
 
 | Platform | Archive |
 | --- | --- |
-| macOS, Apple Silicon | `rawr-apps_v0.2.0_darwin_arm64.tar.gz` |
-| macOS, Intel | `rawr-apps_v0.2.0_darwin_amd64.tar.gz` |
-| Linux, ARM64 | `rawr-apps_v0.2.0_linux_arm64.tar.gz` |
-| Linux, x86-64 | `rawr-apps_v0.2.0_linux_amd64.tar.gz` |
+| macOS, Apple Silicon | `rawr-apps_v0.2.1_darwin_arm64.tar.gz` |
+| macOS, Intel | `rawr-apps_v0.2.1_darwin_amd64.tar.gz` |
+| Linux, ARM64 | `rawr-apps_v0.2.1_linux_arm64.tar.gz` |
+| Linux, x86-64 | `rawr-apps_v0.2.1_linux_amd64.tar.gz` |
 
 For example, on an Apple Silicon Mac:
 
 ```sh
-rawr_version=v0.2.0
+rawr_version=v0.2.1
 rawr_archive="rawr-apps_${rawr_version}_darwin_arm64.tar.gz"
 rawr_release_url="https://github.com/metcalfc/rawr/releases/download/${rawr_version}"
 curl -fLO "$rawr_release_url/$rawr_archive"
@@ -53,20 +53,20 @@ ghrawr --version
 
 On Linux, use `sha256sum -c -` in place of `shasum -a 256 -c -`. You can copy the selected executables into any directory on PATH. Native Rex acceptance remains macOS-only; Linux artifacts are cross-compiled builds. Existing `git`/`gh` or SSH tools/authentication are still needed for their corresponding apps.
 
-When using an older v0.1.0 binary, consult its footer and `--help`: files Enter/right previews locally, GitHub browses current-branch PRs/checks without an Issues tab or checkout action, and the VM picker includes mouse activation. v0.2.0 uses mouse selection for browsing and Enter/`s` for an explicit VM connection.
+When using an older v0.1.0 binary, consult its footer and `--help`: files Enter/right previews locally, GitHub browses current-branch PRs/checks without an Issues tab or checkout action, and the VM picker includes mouse activation. v0.2.1 uses mouse selection for browsing and Enter/`s` for an explicit VM connection.
 
 ## Build or install from source
 
 The module requires Go 1.24 or later; verification uses **Go 1.27.1**. Install the pinned version without a checkout:
 
 ```sh
-go install github.com/metcalfc/rawr/cmd/filerawr@v0.2.0
-go install github.com/metcalfc/rawr/cmd/ghrawr@v0.2.0
-go install github.com/metcalfc/rawr/cmd/exerawr@v0.2.0
-go install github.com/metcalfc/rawr/cmd/rawr@v0.2.0 # optional
+go install github.com/metcalfc/rawr/cmd/filerawr@v0.2.1
+go install github.com/metcalfc/rawr/cmd/ghrawr@v0.2.1
+go install github.com/metcalfc/rawr/cmd/exerawr@v0.2.1
+go install github.com/metcalfc/rawr/cmd/rawr@v0.2.1 # optional
 ```
 
-Or run from the [v0.2.0 source checkout](https://github.com/metcalfc/rawr/tree/v0.2.0):
+Or run from the [v0.2.1 source checkout](https://github.com/metcalfc/rawr/tree/v0.2.1):
 
 ```sh
 make build
@@ -74,7 +74,7 @@ export PATH="$PWD/build/bin:$PATH"
 ghrawr --version
 ```
 
-For close-on-exit, run those build commands in the [current main source checkout](https://github.com/metcalfc/rawr/tree/main) instead. Installing new binaries does not change an existing pane's native launch options; explicitly close the old resource pane in Rex and launch it again once.
+Installing v0.2.1 does not change an existing pane's native launch options; explicitly close the old resource pane in Rex and launch it again once.
 
 `make install PREFIX="$HOME/.local"` installs all four current binaries under `PREFIX/bin`. `make install-compat` also builds/updates the three old command-name entry points; release bundles contain only the current four names. The Go output is separate from the retained Python `bin/rawr` reference. Put `build/bin` or the install directory first in PATH when trying the Go commands.
 
@@ -134,7 +134,7 @@ Arrows or `j`/`k` and mouse selection browse rows without launching them. Enter 
 
 Filter controls belong to the active view: `/` edits a filter, Enter applies, Escape cancels the edit and Ctrl-U clears it. GitHub filters the loaded list; file filtering matches filenames, not file contents. `q`/Escape leaves a detail/preview/help view before exiting the app.
 
-With **current source after v0.2.0**, quitting a newly launched managed resource app lets Rex remove that app's pane. Quick launch failures remain visible for inspection. `--hide` and `--toggle` retain the running process for later reuse. Local work, SSH shells and central file viewers keep their existing surface-preservation behavior. Already-running panes keep their original launch options until explicitly closed and recreated.
+In **v0.2.1**, quitting a newly launched managed resource app lets Rex remove that app's pane. Quick launch failures remain visible for inspection. `--hide` and `--toggle` retain the running process for later reuse. Local work, SSH shells and central file viewers keep their existing surface-preservation behavior. Already-running panes keep their original launch options until explicitly closed and recreated.
 
 ## GitHub: choose a PR or issue
 
@@ -212,7 +212,7 @@ rawr show demo
 
 `create` registers a project without opening Rex or contacting providers. The initial arrangement has a file pane left, work in the center, and independent GitHub/exe.dev panes stacked right. Use `--apps filerawr,ghrawr` for a subset, or `--apps=` for a shell only. `--vm EXISTING_NAME` records an initial VM link. `rawr link` verifies an existing VM through a read-only listing and changes the saved link; it does not switch a live shell. The default CLI's TUI does not install the optional `l` link callback.
 
-In current source after v0.2.0, newly created resource panes from Rawr's initial open or restore also close when their app exits. Existing live panes retain their launch options; opening or restoring does not replace them to change this setting.
+In v0.2.1, newly created resource panes from Rawr's initial open or restore also close when their app exits. Existing live panes retain their launch options; opening or restoring does not replace them to change this setting.
 
 Opening an already live project selects it and preserves the current arrangement and hidden tools. Only `save` records live geometry; `save --expected-revision N` protects against a stale writer. Unrecognized live programs are retained and saved as shell placeholders, since their processes and conversations cannot be reconstructed from a layout.
 
@@ -246,22 +246,22 @@ make release VERSION=dev TARGETS=darwin/arm64,linux/amd64
 make release VERSION=dev TARGETS=windows/amd64,windows/arm64
 ```
 
-For a versioned release build, use its reviewed full source commit and a fresh output directory. For v0.2.0:
+For a versioned release build, use its reviewed full source commit and a fresh output directory. For v0.2.1:
 
 ```sh
-go run ./scripts/release.go -version v0.2.0 -commit FULL_SOURCE_COMMIT \
+go run ./scripts/release.go -version v0.2.1 -commit FULL_SOURCE_COMMIT \
   -targets darwin/arm64,darwin/amd64,linux/arm64,linux/amd64 \
-  -out dist/v0.2.0
+  -out dist/v0.2.1
 ```
 
 Every binary and `BUILD-INFO.json` records that version/commit. Publish only those four fresh archives and their adjacent `SHA256SUMS`; older local development archives are separate artifacts. The script builds and checksums locally; it does not create tags or upload releases.
 
-The [source workflow](https://github.com/metcalfc/rawr/blob/v0.2.0/.github/workflows/go.yml) runs Go/SDK checks and uploads build artifacts; it does not publish releases. Implementation evidence and test results belong to the [public verification summary](VERIFICATION.md); this guide describes controls rather than declaring checks passed.
+The [source workflow](https://github.com/metcalfc/rawr/blob/v0.2.1/.github/workflows/go.yml) runs Go/SDK checks and uploads build artifacts; it does not publish releases. Implementation evidence and test results belong to the [public verification summary](VERIFICATION.md); this guide describes controls rather than declaring checks passed.
 
 ## Recording and remaining scope
 
-The [main demo](../assets/demo.gif) captures the actual Rex GUI, starting from a working terminal and opening `ghrawr`, `filerawr` and `exerawr` as native panes. It shows resource browsing and local file opening in the center. Captured GUI keyframes are encoded into the animation; GitHub/VM records are labelled fixtures, and no live-provider checkout, browser action or SSH connection is demonstrated.
+The [main demo](../assets/demo.gif) captures the actual Rex GUI: bare `ghrawr`, `filerawr` and `exerawr` open native panes, then `q` on each main list removes its pane while the original shell survives. It was recorded with development build `fd98579`; v0.2.1 includes the same open/quit behavior. Timed GUI screenshots use labelled provider fixtures and external caption bars; they are not continuous video. No central file opening, provider checkout, browser action or VM connection is shown.
 
-The [optional standalone VHS tour](https://github.com/metcalfc/rawr/blob/main/assets/standalone-demo.gif) shows the `--tui` apps in one isolated terminal. It covers filename filters/local preview/diffs, PRs/issues/checks and VM details, without displaying native Rex panes. See [capture and recording instructions](https://github.com/metcalfc/rawr/tree/main/demos) for the two distinct methods. Media updates on main leave the published v0.2.0 tag and release archives unchanged.
+The [optional standalone VHS tour](https://github.com/metcalfc/rawr/blob/main/assets/standalone-demo.gif) shows the `--tui` apps in one isolated terminal. It covers filename filters/local preview/diffs, PRs/issues/checks and VM details, without displaying native Rex panes. See [capture and recording instructions](https://github.com/metcalfc/rawr/tree/main/demos) for the two distinct methods. The v0.2.1 source includes the current native demo; the older v0.2.0 tag and archives remain unchanged.
 
 Terminal References, content text search, editor integration, pin/preview policies and additional activity features are not implemented. Filename filters and read-only views are the current file-navigation scope. Rex continues to own native terminal hosting/activity; no universal herdr compatibility host or terminal-text relaunch mechanism is introduced. Linux native acceptance remains unverified.

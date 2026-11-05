@@ -1,12 +1,12 @@
 # Captured native Rex workflow
 
-[Watch the main demo](../assets/demo.gif). In an existing Rex work window, bare `ghrawr`, `filerawr` and `exerawr` open independent native panes. Focusing each app's main list and pressing `q` quits it; Rex removes the pane while the original work shell stays alive. The capture uses development build `fd98579`, after v0.2.0, with labelled provider fixtures. Released v0.2.0 does not include close-on-exit.
+[Watch the main demo](../assets/demo.gif). In an existing Rex work window, bare `ghrawr`, `filerawr` and `exerawr` open independent native panes. Focusing each app's main list and pressing `q` quits it; Rex removes the pane while the original work shell stays alive. The capture used development build `fd98579`, after v0.2.0, with labelled provider fixtures. Close-on-exit ships in v0.2.1; the recording predates that release.
 
 The animation contains 14 timed GUI keyframes over 20.36 seconds (1,234,900 bytes). Its 1416×968 frame contains the real 1416×912 Rex image plus a 56-pixel caption bar below it. Those captions annotate actual command/`q` actions; they are outside the Rex UI. This is not continuous screen video. No central file opening, PR checkout, browser action or VM connection is shown. See [verification](../docs/VERIFICATION.md) for acceptance and limits; the [separate native screenshot](../assets/rex-resource-panes.png) is from an earlier walkthrough.
 
 ## Reproduce the native capture
 
-Use the verified Rex version with a connected GUI client and turn Autobalance splits off for deliberate pane dimensions. Build apps from a source checkout containing close-on-exit; the captured source was `fd98579`. Build the [fixture setup helper](https://github.com/metcalfc/rawr/tree/main/scripts/acceptance-native-demo) and point it to those source-built apps:
+Use the verified Rex version with a connected GUI client and turn Autobalance splits off for deliberate pane dimensions. Use the [v0.2.1 source checkout](https://github.com/metcalfc/rawr/tree/v0.2.1) to build apps and the [fixture setup helper](https://github.com/metcalfc/rawr/tree/v0.2.1/scripts/acceptance-native-demo). The original capture used development source `fd98579`; v0.2.1 provides the same open/quit behavior:
 
 ```sh
 make build
@@ -20,7 +20,7 @@ go build -o .acceptance/native-demo/helper ./scripts/acceptance-native-demo
   --manifest .acceptance/native-demo/location.json
 ```
 
-Replace the connected Rex client label for your machine. Setup creates one shell in a disposable fixture project. Its journal refuses duplicate setup; it does not close or reload existing work. The local manifest keeps native identifiers under ignored `.acceptance/`. Newly launched source-built resource panes use close-on-exit; an already-running pane retains its original launch options.
+Replace the connected Rex client label for your machine. Setup creates one shell in a disposable fixture project. Its journal refuses duplicate setup; it does not close or reload existing work. The local manifest keeps native identifiers under ignored `.acceptance/`. Newly launched v0.2.1 resource panes use close-on-exit; an already-running pane retains its original launch options.
 
 1. Type `ghrawr` in the work terminal and capture its native pane opening.
 2. Return focus to the same terminal, type `filerawr`, and capture its pane opening.
@@ -35,7 +35,7 @@ Replace the connected Rex client label for your machine. Setup creates one shell
 
 The encoder uses ffmpeg's concat input and `palettegen`/`paletteuse` filters and writes `assets/demo.gif` by default. Frame holds set the animation's pacing.
 
-This capture requires the actual Rex application and GUI interaction. The optional VHS runner below records a separate standalone terminal tour. Recorder source and media updates live on [main](https://github.com/metcalfc/rawr/tree/main/demos); the published v0.2.0 tag and release archives remain unchanged.
+This capture requires the actual Rex application and GUI interaction. The optional VHS runner below records a separate standalone terminal tour. The [v0.2.1 recorder source](https://github.com/metcalfc/rawr/tree/v0.2.1/demos) includes this open/quit tour. The older v0.2.0 tag and archives remain unchanged.
 
 ## Optional standalone VHS tour
 
