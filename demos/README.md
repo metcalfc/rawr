@@ -1,32 +1,33 @@
 # Captured native Rex workflow
 
-[Watch the main demo](../assets/demo.gif). It starts from a working terminal in the actual Rex GUI. Running `ghrawr`, `filerawr` and `exerawr` opens independent native resource panes; the original local work stays available. The workflow browses GitHub resources, displays the VM pane, opens a selected local file in the center, then returns the retained shell to the center. GitHub/VM provider data are labelled fixtures.
+[Watch the main demo](../assets/demo.gif). In an existing Rex work window, bare `ghrawr`, `filerawr` and `exerawr` open independent native panes. Focusing each app's main list and pressing `q` quits it; Rex removes the pane while the original work shell stays alive. The capture uses development build `fd98579`, after v0.2.0, with labelled provider fixtures. Released v0.2.0 does not include close-on-exit.
 
-The animation is assembled from GUI screenshots captured during that workflow. Native Rex chrome, panes and tabs are part of those captures. It does not demonstrate a live-provider checkout, browser action or SSH connection. See [verification](../docs/VERIFICATION.md) for native acceptance and limits; the [separate native screenshot](../assets/rex-resource-panes.png) is also available.
+The animation contains 14 timed GUI keyframes over 20.36 seconds (1,234,900 bytes). Its 1416×968 frame contains the real 1416×912 Rex image plus a 56-pixel caption bar below it. Those captions annotate actual command/`q` actions; they are outside the Rex UI. This is not continuous screen video. No central file opening, PR checkout, browser action or VM connection is shown. See [verification](../docs/VERIFICATION.md) for acceptance and limits; the [separate native screenshot](../assets/rex-resource-panes.png) is from an earlier walkthrough.
 
 ## Reproduce the native capture
 
-Use the verified Rex version with a connected GUI client and turn Autobalance splits off for deliberate pane dimensions. From the current source checkout, build the [fixture setup helper](https://github.com/metcalfc/rawr/tree/main/scripts/acceptance-native-demo) and pass the explicit directory containing the released native v0.2.0 apps:
+Use the verified Rex version with a connected GUI client and turn Autobalance splits off for deliberate pane dimensions. Build apps from a source checkout containing close-on-exit; the captured source was `fd98579`. Build the [fixture setup helper](https://github.com/metcalfc/rawr/tree/main/scripts/acceptance-native-demo) and point it to those source-built apps:
 
 ```sh
+make build
 mkdir -p .acceptance/native-demo
 go build -o .acceptance/native-demo/helper ./scripts/acceptance-native-demo
 .acceptance/native-demo/helper setup \
-  --bin /absolute/path/to/rawr-apps_v0.2.0_darwin_arm64 \
+  --bin "$PWD/build/bin" \
   --client CONNECTED_REX_CLIENT \
   --manifest .acceptance/native-demo/location.json
 .acceptance/native-demo/helper focus \
   --manifest .acceptance/native-demo/location.json
 ```
 
-Replace the app directory and connected Rex client label for your machine. Setup creates one shell in a disposable fixture project. Its journal refuses duplicate setup; it does not close or reload existing work. The local manifest keeps native identifiers under ignored `.acceptance/`.
+Replace the connected Rex client label for your machine. Setup creates one shell in a disposable fixture project. Its journal refuses duplicate setup; it does not close or reload existing work. The local manifest keeps native identifiers under ignored `.acceptance/`. Newly launched source-built resource panes use close-on-exit; an already-running pane retains its original launch options.
 
-1. Type `ghrawr` in the work terminal. Capture the opened native pane, browse issues/checks, and return focus to the still-usable work terminal.
-2. Type `filerawr` in that terminal and capture its native file pane.
-3. Return focus to the work terminal and type `exerawr`. Capture its native VM pane and fixture details without connecting.
-4. In the file pane, select the README and press Enter to open its read-only view in the center. Capture the original work retained in its native history tab.
-5. Select **Work · previous**, type `exerawr --local` in the original shell, then explicitly select the original resource tab. The local shell is back in the center and the file viewer stays retained in a tab. `--local` restores work placement; it does not automatically switch the active native tab.
-6. Use computer-use screenshots to capture the real Rex window at those checkpoints, keeping the same window bounds. Convert screenshots to PNG if the capture tool returns JPEG. Put the PNGs and frame holds in a concat manifest, then encode the animation with [the native encoder](encode-native.sh):
+1. Type `ghrawr` in the work terminal and capture its native pane opening.
+2. Return focus to the same terminal, type `filerawr`, and capture its pane opening.
+3. Return focus again, type `exerawr`, and capture all three native resource panes beside the original work.
+4. Focus the main list in `exerawr`, `filerawr`, then `ghrawr`, pressing `q` in each and capturing its pane disappearing. In details/help, `q` first backs out; quit from the main list.
+5. Return to the original work terminal and run `echo 'Still working here.'`. Capture that output with the shell still available.
+6. Use computer-use screenshots to capture the real Rex window at those checkpoints, keeping the same window bounds. Convert screenshots to PNG if the capture tool returns JPEG. Optional caption bars belong below the Rex image. This capture renders SVG bars with `rsvg-convert` and appends them with ffmpeg's `scale`/`vstack` filters. Put the resulting PNGs and frame holds in a concat manifest, then encode the animation with [the native encoder](encode-native.sh):
 
 ```sh
 ./demos/encode-native.sh .acceptance/native-demo/frames.ffconcat

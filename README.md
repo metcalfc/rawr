@@ -8,9 +8,9 @@ Small resource panes. Your work in the center.
 
 Run `ghrawr`, `filerawr` or `exerawr` from an existing work terminal in [Rex](https://www.superlogical.com/rex). Each Go command opens or focuses its own native resource pane and returns, leaving your work available. Browse files, pull requests, issues and VMs, then explicitly open a file/diff in the center, check out a PR into an idle local checkout, or connect a VM shell. Previous central work stays available in native tabs.
 
-![Captured native Rex workflow: ghrawr, filerawr and exerawr from a work terminal](assets/demo.gif)
+![Captured native Rex workflow: open ghrawr, filerawr and exerawr, then quit each pane](assets/demo.gif)
 
-Captured from the actual Rex GUI: launch the three commands from a work terminal, browse the native resource panes, open a local file in the center and return to the retained shell. GitHub/VM provider data are labelled fixtures. This animation uses captured GUI keyframes; it does not depict a live-provider checkout, browser action or SSH connection. [Capture scope and reproduction](https://github.com/metcalfc/rawr/tree/main/demos).
+Captured in an existing Rex work window: bare `ghrawr`, `filerawr` and `exerawr` open native panes, then `q` from each app's main list removes its pane while the original shell stays alive. The apps are development build `fd98579`, after v0.2.0; provider data are fixtures. Timed GUI screenshots have explanatory captions below the Rex image; this is not continuous video. No central file opening, PR checkout, browser action or VM connection is shown. [Capture scope and reproduction](https://github.com/metcalfc/rawr/tree/main/demos).
 
 **v0.2.0** adds repository-wide PR/issue browsing, file Changes and filters, central file/diff views, guarded PR checkout and quieter shell commands. Upgrading scripts from v0.1.0: add `--verbose` to keep receiving pane-action JSON. `--status` still prints JSON.
 
