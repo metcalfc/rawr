@@ -311,3 +311,22 @@ func (a *application) helpLines() []string {
 	lines = append(lines, "", "Anchored root: "+a.context.Root)
 	return ui.WrapLines(lines, a.area().Width)
 }
+
+// ProgramStatus reports what the resource pane is doing so Rex can show it on
+// the tab and in the session picker. A pending checkout confirmation blocks on
+// the user; refreshes and checkouts are working; otherwise the pane is idle.
+func (a *application) ProgramStatus() ui.ProgramStatus {
+	status := ui.ProgramStatus{App: a.kind, State: "idle"}
+	switch {
+	case a.gh.busy && a.gh.confirm != nil:
+		status.State = "working"
+		status.Message = fmt.Sprintf("Checking out PR #%d", a.gh.confirm.pr.Number)
+	case a.gh.confirm != nil:
+		status.State, status.Kind = "blocked", "permission"
+		status.Message = fmt.Sprintf("Check out PR #%d? y/n", a.gh.confirm.pr.Number)
+	case a.loader != nil && a.loader.Loading():
+		status.State = "working"
+		status.Message = "Refreshing"
+	}
+	return status
+}

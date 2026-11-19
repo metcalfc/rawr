@@ -108,6 +108,8 @@ Call `ui.Run(ctx, view)` to own a real terminal's initialization/restoration. `H
 
 `ui.ResourceStatus` records the last successful update and an error, and formats loading/current/stale status through `Line(loading)`. Applications retain their last good rows. `ui.Document` supplies scrolling for read-only help or details; the application decides how to leave that view. `ui.WrapLines` fits help/detail text to a narrow pane. The app controls whether a mouse/list activation only selects or invokes an explicit action; the built-in panes use selection-only mouse browsing.
 
+A view may also implement `ui.StatusReporter` (`ProgramStatus() ui.ProgramStatus`). After each frame the runtime reports changes through the [Program Status Protocol](https://www.superlogical.com/rex/docs/build/program-status) (OSC 7501), and clears the record on exit. Rex shows `working` as a tab spinner and `blocked` as a needs-you indicator in tabs and the session picker. Scripts receive it as `terminal.program_status_changed`. Terminals without support ignore the sequence. The built-in panes report `working` while refreshing and `blocked`/`permission` while a PR checkout waits for `y`/`n`.
+
 `ui.RunScreen` uses a caller-initialized tcell screen, including a simulation screen. The caller retains `Init`/`Fini` ownership. This lets an external module exercise its UI without opening Rex or a real TTY.
 
 ## Put a managed terminal in the center

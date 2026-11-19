@@ -240,3 +240,25 @@ func TestGitHubCanceledUIFinishesAndRetainsCheckoutOutcome(t *testing.T) {
 		t.Fatalf("outcome was lost on cancellation: %q %v", message, err)
 	}
 }
+
+func TestGitHubCheckoutConfirmationReportsBlockedProgramStatus(t *testing.T) {
+	release := make(chan struct{})
+	a, _ := githubFixture(t, model.Callbacks{CheckoutPR: func(model.PR) error { <-release; return nil }})
+	if s := a.ProgramStatus(); s.State != "idle" || s.App != "ghrawr" {
+		t.Fatalf("resting status %+v", s)
+	}
+	a.handle(context.Background(), character('x'))
+	if s := a.ProgramStatus(); s.State != "blocked" || s.Kind != "permission" || !strings.Contains(s.Message, "#42") {
+		t.Fatalf("confirmation status %+v", s)
+	}
+	a.handle(context.Background(), character('y'))
+	if s := a.ProgramStatus(); s.State != "working" || !strings.Contains(s.Message, "#42") {
+		t.Fatalf("checkout status %+v", s)
+	}
+	close(release)
+	awaitCheckout(t, a)
+	// A finished checkout refreshes the PR list; it no longer blocks or checks out.
+	if s := a.ProgramStatus(); s.State == "blocked" || strings.Contains(s.Message, "#42") {
+		t.Fatalf("finished status %+v", s)
+	}
+}

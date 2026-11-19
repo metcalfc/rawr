@@ -126,6 +126,14 @@ func RunScreen(ctx context.Context, screen tcell.Screen, view View) error {
 	}
 	screen.EnableMouse(tcell.MouseButtonEvents)
 	defer screen.DisableMouse()
+	reporter, _ := view.(StatusReporter)
+	var status *statusReporter
+	if tty, ok := screen.Tty(); ok && reporter != nil {
+		status = &statusReporter{out: tty}
+		// Clearing on exit keeps a quit app from leaving a stale record
+		// behind; Rex also drops working/blocked when the process exits.
+		defer status.clear()
+	}
 	done := make(chan struct{})
 	defer close(done)
 	go func() {
@@ -144,6 +152,9 @@ func RunScreen(ctx context.Context, screen tcell.Screen, view View) error {
 		screen.Clear()
 		view.Draw(canvas)
 		screen.Show()
+		if status != nil {
+			status.report(reporter.ProgramStatus())
+		}
 		event := screen.PollEvent()
 		if event == nil {
 			return nil
