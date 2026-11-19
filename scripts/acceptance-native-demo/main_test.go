@@ -34,13 +34,12 @@ func TestSetupJournalAndSingleShell(t *testing.T) {
 					if a == "whoami" {
 						return raw(i), nil, nil
 					}
-					if a == "block" {
-						return raw(rex.Process{Child: &rex.ProcessInfo{PID: 77, Path: "/bin/bash"}, Foreground: &rex.ProcessInfo{PID: 77, Path: "/bin/bash"}}), nil, nil
-					}
 					if a != "call" || j+2 >= len(args) {
 						continue
 					}
 					switch args[j+1] {
+					case rex.TerminalCreator + ".process":
+						return raw(rex.Process{Child: &rex.ProcessInfo{PID: 77, Path: "/bin/bash"}, Foreground: &rex.ProcessInfo{PID: 77, Path: "/bin/bash"}}), nil, nil
 					case "session.list":
 						return raw(map[string]any{"sessions": []rex.Session{}}), nil, nil
 					case "session.create":

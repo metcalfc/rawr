@@ -40,8 +40,12 @@ func (f *safetyRPC) run(_ context.Context, _ string, args []string) ([]byte, []b
 		f.calls = append(f.calls, "identity")
 		return safetyRaw(f.identity), nil, nil
 	}
-	if safetyArg(args, "block") == "call" {
-		bid := safetyArg(args, "-b")
+	if method := safetyArg(args, "call"); method == rex.TerminalCreator+".process" {
+		var request struct {
+			BlockID string `json:"block_id"`
+		}
+		_ = json.Unmarshal([]byte(safetyArg(args, method)), &request)
+		bid := request.BlockID
 		f.calls = append(f.calls, "process:"+bid)
 		return safetyRaw(f.process[bid]), nil, nil
 	}

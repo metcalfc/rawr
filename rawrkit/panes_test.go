@@ -91,14 +91,15 @@ func (f *fakeNative) run(_ context.Context, _ string, argv []string) ([]byte, []
 			f.calls = append(f.calls, "whoami")
 			return encode(f.identity), nil, nil
 		}
-		if arg == "block" && j+1 < len(argv) && argv[j+1] == "call" {
-			bid := ""
-			for k := j + 2; k+1 < len(argv); k++ {
-				if argv[k] == "-b" {
-					bid = argv[k+1]
-				}
+		if arg == "api" && j+3 < len(argv) && argv[j+1] == "call" && strings.HasPrefix(argv[j+2], rex.TerminalCreator+".") {
+			var request struct {
+				BlockID string `json:"block_id"`
 			}
-			if argv[len(argv)-1] == "modes" {
+			if err := json.Unmarshal([]byte(argv[j+3]), &request); err != nil {
+				f.t.Fatal(err)
+			}
+			bid := request.BlockID
+			if argv[j+2] == rex.TerminalCreator+".modes" {
 				f.calls = append(f.calls, "block.modes")
 				screen := f.screen
 				if screen == "" {

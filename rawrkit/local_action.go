@@ -56,13 +56,11 @@ func (m *Manager) RunLocalAction(ctx context.Context, c Context, action func(con
 		if err != nil || !samePath(root, cwd) {
 			return errors.New("local shell must be in the anchored project root before checkout")
 		}
-		var modes struct {
-			Screen string `json:"screen"`
-		}
-		if err = m.Rex.Run(ctx, []string{"block", "call", "-s", c.Session, "-b", s.MainBlock, "modes"}, &modes); err != nil {
+		screen, err := m.Rex.Screen(ctx, c.Session, s.MainBlock)
+		if err != nil {
 			return err
 		}
-		if modes.Screen != "primary" {
+		if screen != "primary" {
 			return errors.New("local work is not a verified primary shell screen; checkout refused")
 		}
 		if err = action(ctx); err != nil {

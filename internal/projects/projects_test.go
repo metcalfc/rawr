@@ -71,8 +71,12 @@ func (f *nativeFake) run(_ context.Context, _ string, args []string) ([]byte, []
 		f.calls = append(f.calls, "whoami")
 		return raw(rex.Identity{HostID: "host:local", InstanceID: "generation:1", Version: rex.TestedVersion, Endpoint: "unix:/tmp/rex-test"}), nil, nil
 	}
-	if argAfter(args, "block") == "call" {
-		bid := argAfter(args, "-b")
+	if method := argAfter(args, "call"); method == rex.TerminalCreator+".process" {
+		var request struct {
+			BlockID string `json:"block_id"`
+		}
+		_ = json.Unmarshal([]byte(argAfter(args, method)), &request)
+		bid := request.BlockID
 		f.calls = append(f.calls, "process:"+bid)
 		proc, ok := f.process[bid]
 		if !ok {

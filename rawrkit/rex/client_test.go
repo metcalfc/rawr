@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -203,5 +204,81 @@ func TestRexErrorsReturnNoMutationRetry(t *testing.T) {
 	}
 	if err := c.Call(context.Background(), "session.new", nil, nil); err == nil || calls != 1 {
 		t.Fatalf("unsafe failure handling: %d %v", calls, err)
+	}
+}
+
+func TestSelectAsksTheAppThroughClientPerform(t *testing.T) {
+	c := New("rex", "", "lunchbox")
+	var methods []string
+	var perform map[string]any
+	c.Runner = func(_ context.Context, _ string, args []string) ([]byte, []byte, error) {
+		method, params := args[len(args)-2], args[len(args)-1]
+		methods = append(methods, method)
+		switch method {
+		case "client.list":
+			return []byte(`{"clients":[{"client_id":"client:cli","info":{"kind":"cli"}},{"client_id":"client:app","info":{"kind":"app","label":"lunchbox"}}]}`), nil, nil
+		case "client.perform":
+			if err := json.Unmarshal([]byte(params), &perform); err != nil {
+				t.Fatal(err)
+			}
+			return []byte(`{"performed_by":"client:app"}`), nil, nil
+		}
+		return []byte(`{"revision":1}`), nil, nil
+	}
+	if err := c.Select(context.Background(), "session:s", "block:b"); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(methods, []string{"client.list", "client.perform", "session.focus_block"}) {
+		t.Fatalf("select used %v", methods)
+	}
+	want := map[string]any{"client_id": "client:app", "action": "session.select", "session_id": "session:s", "args": map[string]any{"session_id": "session:s"}}
+	if !reflect.DeepEqual(perform, want) {
+		t.Fatalf("perform request %v", perform)
+	}
+}
+
+func TestTerminalMethodsUseCreatorQualifiedAPINames(t *testing.T) {
+	c := New("rex", "", "")
+	var got [][2]string
+	c.Runner = func(_ context.Context, _ string, args []string) ([]byte, []byte, error) {
+		got = append(got, [2]string{args[len(args)-2], args[len(args)-1]})
+		if strings.HasSuffix(args[len(args)-2], ".modes") {
+			return []byte(`{"screen":"primary"}`), nil, nil
+		}
+		return []byte(`{"child":{"pid":7,"name":"zsh","path":"/bin/zsh"},"last_exit":null}`), nil, nil
+	}
+	p, err := c.Process(context.Background(), "session:s", "block:b")
+	if err != nil || p.Child == nil || p.Child.PID != 7 {
+		t.Fatalf("process: %+v %v", p, err)
+	}
+	screen, err := c.Screen(context.Background(), "session:s", "block:b")
+	if err != nil || screen != "primary" {
+		t.Fatalf("screen: %q %v", screen, err)
+	}
+	request := `{"args":{},"block_id":"block:b","session_id":"session:s"}`
+	want := [][2]string{{"com.superlogical.terminal.process", request}, {"com.superlogical.terminal.modes", request}}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("terminal calls %v", got)
+	}
+}
+
+func TestNewPrefersTheCLIBesideTheRunningServer(t *testing.T) {
+	dir := t.TempDir()
+	cli := filepath.Join(dir, "rex")
+	if err := os.WriteFile(cli, []byte("#!/bin/sh\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("RAWR_REX", "")
+	t.Setenv("REXAPPS_REX", "")
+	t.Setenv("REX_BIN_DIR", dir)
+	if got := New("", "", "").Executable; got != cli {
+		t.Fatalf("executable %q, want %q", got, cli)
+	}
+	if got := New("/explicit/rex", "", "").Executable; got != "/explicit/rex" {
+		t.Fatalf("explicit executable overridden: %q", got)
+	}
+	t.Setenv("REX_BIN_DIR", filepath.Join(dir, "missing"))
+	if got := New("", "", "").Executable; got == cli {
+		t.Fatalf("used a missing REX_BIN_DIR")
 	}
 }
