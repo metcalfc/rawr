@@ -69,7 +69,10 @@ func argAfter(args []string, key string) string {
 func (f *nativeFake) run(_ context.Context, _ string, args []string) ([]byte, []byte, error) {
 	if argAfter(args, "whoami") == "--json" {
 		f.calls = append(f.calls, "whoami")
-		return raw(rex.Identity{HostID: "host:local", InstanceID: "generation:1", Version: rex.TestedVersion, Endpoint: "unix:/tmp/rex-test"}), nil, nil
+		return raw(rex.Identity{HostID: "host:local", InstanceID: "generation:1", Version: rex.TestedVersion, APIRevision: rex.MinAPIRevision, Endpoint: "unix:/tmp/rex-test"}), nil, nil
+	}
+	if argAfter(args, "api") == "list" {
+		return rex.SupportedAPIListing(), nil, nil
 	}
 	if method := argAfter(args, "call"); method == rex.TerminalCreator+".process" {
 		var request struct {

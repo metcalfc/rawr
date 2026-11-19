@@ -2,15 +2,39 @@ package rex
 
 import "encoding/json"
 
-const TestedVersion = "0.0.1793645657-gd018d2"
+// TestedVersion is the Rex build rawrkit was last verified against. It is
+// informational: Rex is in beta and ships often, so the gate is MinAPIRevision
+// plus the capabilities rawrkit needs (see RequiredMethods), not this string.
+const TestedVersion = "0.1.0-preview.18"
+
+// MinAPIRevision is the oldest Rex API revision whose schemas rawrkit's calls
+// were verified against. Newer revisions are accepted when they still list
+// every required capability; a renamed parameter fails loudly because Rex
+// rejects unknown input properties.
+const MinAPIRevision = 13
+
+// RequiredMethods are the server API methods rawrkit calls.
+var RequiredMethods = []string{
+	"client.list", "client.perform",
+	"session.create", "session.detach_block", "session.focus_block", "session.list",
+	"session.list_blocks", "session.move_block", "session.new_split", "session.new_window",
+	"session.set_block_label", "session.set_window_label", "session.swap_blocks", "session.view",
+}
+
+// RequiredTerminalMethods are the terminal block methods rawrkit calls.
+var RequiredTerminalMethods = []string{"modes", "process"}
+
+// TerminalShellFlavor is the block flavor rawrkit creates.
+const TerminalShellFlavor = TerminalCreator + ".shell"
 
 type Identity struct {
-	HostID     string `json:"host_id"`
-	InstanceID string `json:"instance_id"`
-	Version    string `json:"rex_version"`
-	Endpoint   string `json:"endpoint"`
-	SessionID  string `json:"session_id,omitempty"`
-	BlockID    string `json:"block_id,omitempty"`
+	HostID      string `json:"host_id"`
+	InstanceID  string `json:"instance_id"`
+	Version     string `json:"rex_version"`
+	APIRevision int    `json:"api_revision"`
+	Endpoint    string `json:"endpoint"`
+	SessionID   string `json:"session_id,omitempty"`
+	BlockID     string `json:"block_id,omitempty"`
 }
 type Session struct {
 	ID    string `json:"session_id"`

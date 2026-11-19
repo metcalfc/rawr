@@ -1,5 +1,11 @@
 # Verification
 
+## Rex 0.1.0-preview.18 (November 19, 2026)
+
+Rex `0.1.0-preview.18` (API 13) was checked against every server API method rawrkit sends: all are listed, each request property rawrkit sends is in the method's input schema, and the live `session.view`, `session.list_blocks`, `client.list`, terminal `process`/`modes` results and the shell flavor's options (`command`, `shell: none`, `login`, `exit.on_completion`, `path_prepend`) carry the fields rawrkit reads. In a throwaway session, `exerawr` opened, hid, re-showed, and reported status for its native pane. The exact-version guard was replaced by an API-revision floor plus capability discovery (see [USAGE](USAGE.md)).
+
+## Earlier baseline
+
 Local verification was performed on macOS arm64 on November 4, 2026, using Go 1.27.1 and Rex `0.0.1793645657-gd018d2` (API 10). The Go module requires Go 1.24 or later.
 
 ## Capability check before the resource-pane refinement

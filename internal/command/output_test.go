@@ -32,13 +32,14 @@ if [ -n "$RAWR_TEST_REX_FAILURE" ]; then
   exit 1
 fi
 case "$*" in
-  *whoami*) printf '%%s\n' '{"host_id":"host","instance_id":"generation","rex_version":"%s","endpoint":"unix:/tmp/fixture.sock"}' ;;
+  *whoami*) printf '%%s\n' '{"host_id":"host","instance_id":"generation","rex_version":"%s","api_revision":%d,"endpoint":"unix:/tmp/fixture.sock"}' ;;
+  *'api list --json') printf '%%s\n' '%s' ;;
   *'api call session.view '*) printf '%%s\n' '{"session_id":"fixture","revision":1,"active_window_id":"work","windows":[{"window_id":"work","focused_block_id":"main","layers":[{"layer_id":"layer","kind":"tiled","layout":{"block_id":"main"},"blocks":[{"block_id":"main","host_id":"host","label":"Local work"}]}]}]}' ;;
   *'api call session.list_blocks '*) printf '%%s\n' '{"blocks":[{"block_id":"main","host_id":"host","label":"Local work","placement":"placed"}]}' ;;
   *'api call session.focus_block '*) printf '%%s\n' '{"revision":2}' ;;
   *) printf 'unexpected fixture request\n' >&2; exit 1 ;;
 esac
-`, rex.TestedVersion)
+`, rex.TestedVersion, rex.MinAPIRevision, rex.SupportedAPIListing())
 	if err := os.WriteFile(cli, []byte(script), 0700); err != nil {
 		t.Fatal(err)
 	}

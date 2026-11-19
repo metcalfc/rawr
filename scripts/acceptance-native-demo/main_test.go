@@ -26,13 +26,16 @@ func TestSetupJournalAndSingleShell(t *testing.T) {
 				t.Fatal(err)
 			}
 			m := manifest{Schema: 1, Root: base, SessionLabel: "native-pane-demo", AnchorLabel: "owned", Bootstrap: "/fixture/native-demo-shell", Config: "/fixture/provider.json", Shell: "/bin/bash"}
-			i := rex.Identity{HostID: "host", InstanceID: "generation", Version: rex.TestedVersion, Endpoint: "unix:/tmp/fake"}
+			i := rex.Identity{HostID: "host", InstanceID: "generation", Version: rex.TestedVersion, APIRevision: rex.MinAPIRevision, Endpoint: "unix:/tmp/fake"}
 			created := 0
 			r := rex.New("fake-rex", "", "")
 			r.Runner = func(_ context.Context, _ string, args []string) ([]byte, []byte, error) {
 				for j, a := range args {
 					if a == "whoami" {
 						return raw(i), nil, nil
+					}
+					if a == "api" && j+1 < len(args) && args[j+1] == "list" {
+						return rex.SupportedAPIListing(), nil, nil
 					}
 					if a != "call" || j+2 >= len(args) {
 						continue

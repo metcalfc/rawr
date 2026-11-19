@@ -13,7 +13,7 @@ import (
 )
 
 func identityJSON(instance string) []byte {
-	b, _ := json.Marshal(Identity{HostID: "host", InstanceID: instance, Version: TestedVersion, Endpoint: "unix:/tmp/rex socket"})
+	b, _ := json.Marshal(Identity{HostID: "host", InstanceID: instance, Version: TestedVersion, APIRevision: MinAPIRevision, Endpoint: "unix:/tmp/rex socket"})
 	return b
 }
 func testRunnerResponse(c *Client, raw string) {
@@ -22,16 +22,17 @@ func testRunnerResponse(c *Client, raw string) {
 
 const validView = `{"session_id":"s","revision":4,"active_window_id":"w","windows":[{"window_id":"w","focused_block_id":"b","layers":[{"layer_id":"l","kind":"tiled","layout":{"block_id":"b"},"blocks":[{"block_id":"b","host_id":"host","creator_name":"com.superlogical.terminal","flavor":"com.superlogical.terminal.shell"}]}]}]}`
 
-func TestIdentityRequiresTestedVersionAndLocalGeneration(t *testing.T) {
+func TestIdentityRequiresAPIRevisionAndLocalGeneration(t *testing.T) {
 	for _, test := range []struct {
 		name     string
 		identity Identity
 		want     string
 	}{
-		{"version", Identity{Version: "future", HostID: "host", InstanceID: "instance", Endpoint: "unix:/tmp/a"}, "unsupported Rex version"},
-		{"remote", Identity{Version: TestedVersion, HostID: "host", InstanceID: "instance", Endpoint: "tcp:remote:123"}, "verified local Unix"},
-		{"missing host", Identity{Version: TestedVersion, InstanceID: "instance", Endpoint: "unix:/tmp/a"}, "host/generation"},
-		{"missing generation", Identity{Version: TestedVersion, HostID: "host", Endpoint: "unix:/tmp/a"}, "host/generation"},
+		{"old api", Identity{Version: "0.0.1", APIRevision: MinAPIRevision - 1, HostID: "host", InstanceID: "instance", Endpoint: "unix:/tmp/a"}, "update Rex"},
+		{"no api revision", Identity{Version: "0.0.1", HostID: "host", InstanceID: "instance", Endpoint: "unix:/tmp/a"}, "update Rex"},
+		{"remote", Identity{Version: TestedVersion, APIRevision: MinAPIRevision, HostID: "host", InstanceID: "instance", Endpoint: "tcp:remote:123"}, "verified local Unix"},
+		{"missing host", Identity{Version: TestedVersion, APIRevision: MinAPIRevision, InstanceID: "instance", Endpoint: "unix:/tmp/a"}, "host/generation"},
+		{"missing generation", Identity{Version: TestedVersion, APIRevision: MinAPIRevision, HostID: "host", Endpoint: "unix:/tmp/a"}, "host/generation"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			c := New("rex", "", "")
@@ -70,7 +71,10 @@ func TestViewRejectsMalformedMissingAndStaleResults(t *testing.T) {
 	if _, err := c.View(context.Background(), "s"); err == nil || !strings.Contains(err.Error(), "stale") {
 		t.Fatalf("accepted old view: %v", err)
 	}
-	c.Runner = func(context.Context, string, []string) ([]byte, []byte, error) {
+	c.Runner = func(_ context.Context, _ string, args []string) ([]byte, []byte, error) {
+		if args[len(args)-2] == "list" {
+			return SupportedAPIListing(), nil, nil
+		}
 		return identityJSON("new-generation"), nil, nil
 	}
 	if _, err := c.Identity(context.Background()); err != nil {
@@ -280,5 +284,87 @@ func TestNewPrefersTheCLIBesideTheRunningServer(t *testing.T) {
 	t.Setenv("REX_BIN_DIR", filepath.Join(dir, "missing"))
 	if got := New("", "", "").Executable; got == cli {
 		t.Fatalf("used a missing REX_BIN_DIR")
+	}
+}
+
+// fakeRex answers whoami with identity, api list with listing, and counts both.
+func fakeRex(c *Client, identity *Identity, listing *[]byte, whoami, lists *int) {
+	c.Runner = func(_ context.Context, _ string, args []string) ([]byte, []byte, error) {
+		switch strings.Join(args[len(args)-2:], " ") {
+		case "whoami --json":
+			*whoami++
+			b, _ := json.Marshal(identity)
+			return b, nil, nil
+		case "list --json":
+			*lists++
+			return *listing, nil, nil
+		}
+		return nil, nil, errors.New("unexpected " + strings.Join(args, " "))
+	}
+}
+
+func TestIdentityAcceptsNewerRexThatKeepsRequiredCapabilities(t *testing.T) {
+	c := New("rex", "", "")
+	identity := Identity{Version: "0.2.0-preview.99", APIRevision: MinAPIRevision + 5, HostID: "host", InstanceID: "one", Endpoint: "unix:/tmp/a"}
+	// A newer server lists extra methods and creators; only the required ones matter.
+	var doc map[string]any
+	_ = json.Unmarshal(SupportedAPIListing(), &doc)
+	doc["methods"] = append(doc["methods"].([]any), map[string]any{"name": "session.something_new"})
+	doc["block_types"] = append(doc["block_types"].([]any), map[string]any{"creator": "com.example.other", "methods": []any{map[string]any{"name": "process"}}})
+	listing, _ := json.Marshal(doc)
+	var whoami, lists int
+	fakeRex(c, &identity, &listing, &whoami, &lists)
+	for range 3 {
+		if _, err := c.Identity(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if whoami != 3 || lists != 1 {
+		t.Fatalf("capabilities should be discovered once per generation: whoami=%d lists=%d", whoami, lists)
+	}
+	identity.InstanceID = "two" // restarted or upgraded server
+	if _, err := c.Identity(context.Background()); err != nil || lists != 2 {
+		t.Fatalf("new generation not rediscovered: lists=%d err=%v", lists, err)
+	}
+}
+
+func TestIdentityRefusesRexMissingRequiredCapabilities(t *testing.T) {
+	for _, test := range []struct {
+		name string
+		drop func(map[string]any)
+		want string
+	}{
+		{"api method", func(d map[string]any) {
+			d["methods"] = d["methods"].([]any)[1:]
+		}, RequiredMethods[0]},
+		{"terminal method", func(d map[string]any) {
+			d["block_types"].([]any)[0].(map[string]any)["methods"] = []any{}
+		}, TerminalCreator + ".process"},
+		{"shell flavor", func(d map[string]any) {
+			d["block_types"].([]any)[0].(map[string]any)["flavors"] = []any{}
+		}, TerminalShellFlavor},
+		{"terminal method from another creator", func(d map[string]any) {
+			d["block_types"].([]any)[0].(map[string]any)["creator"] = "com.example.impostor"
+		}, TerminalCreator + ".modes"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			c := New("rex", "", "")
+			identity := Identity{Version: TestedVersion, APIRevision: MinAPIRevision, HostID: "host", InstanceID: "one", Endpoint: "unix:/tmp/a"}
+			var doc map[string]any
+			_ = json.Unmarshal(SupportedAPIListing(), &doc)
+			test.drop(doc)
+			listing, _ := json.Marshal(doc)
+			var whoami, lists int
+			fakeRex(c, &identity, &listing, &whoami, &lists)
+			_, err := c.Identity(context.Background())
+			if err == nil || !strings.Contains(err.Error(), "lacks capabilities") || !strings.Contains(err.Error(), test.want) {
+				t.Fatalf("accepted or unclear: %v", err)
+			}
+			// A failed check is not cached as verified.
+			_, _ = c.Identity(context.Background())
+			if lists != 2 {
+				t.Fatalf("failed discovery was cached: lists=%d", lists)
+			}
+		})
 	}
 }

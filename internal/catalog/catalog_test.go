@@ -106,7 +106,7 @@ func TestLegacyAliasCollisionsRejectBeforeNativeMutation(t *testing.T) {
 			root := t.TempDir()
 			dir := t.TempDir()
 			c := rawrkit.Context{Root: root, Session: "session", Scope: "scope", Anchor: "main"}
-			identity := rex.Identity{HostID: "host", InstanceID: "generation", Version: rex.TestedVersion, Endpoint: "unix:/tmp/test"}
+			identity := rex.Identity{HostID: "host", InstanceID: "generation", Version: rex.TestedVersion, APIRevision: rex.MinAPIRevision, Endpoint: "unix:/tmp/test"}
 			binding := rawrkit.Binding{BlockID: "old", Label: "old", PID: 12, Path: filepath.Join(root, "ghrex")}
 			state := rawrkit.State{Schema: 1, Context: c, Host: identity.HostID, Generation: identity.InstanceID, MainBlock: "main", LocalBlock: "main", Apps: map[string]rawrkit.Binding{"ghrex": binding}, Terminals: map[string]rawrkit.TerminalEntry{}, Hidden: map[string]rawrkit.Placement{}, Placements: map[string]rawrkit.Placement{}}
 			if collision == "bindings" {
@@ -130,6 +130,9 @@ func TestLegacyAliasCollisionsRejectBeforeNativeMutation(t *testing.T) {
 			client := rex.New("rex", "", "")
 			calls := 0
 			client.Runner = func(_ context.Context, _ string, args []string) ([]byte, []byte, error) {
+				if strings.HasSuffix(strings.Join(args, " "), "api list --json") {
+					return rex.SupportedAPIListing(), nil, nil
+				}
 				calls++
 				if !strings.Contains(strings.Join(args, " "), "whoami") {
 					t.Fatalf("alias collision progressed to native operation: %q", args)

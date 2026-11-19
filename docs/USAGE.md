@@ -84,7 +84,7 @@ Use the bundled Rex CLI automatically on macOS, a `rex` executable in PATH, or p
 filerawr --rex '/Applications/Rex Beta.app/Contents/Helpers/Rex Server.rex/Contents/MacOS/rex'
 ```
 
-Native integration is verified against Rex CLI/server **`0.0.1793645657-gd018d2`**, API **10**, app **Rex Beta 0.1.0 (1758)** on macOS. The adapter rejects other Rex versions and remote endpoints until their capabilities are verified. A binary cross-compiling for another OS establishes build compatibility only; see the [public verification summary](VERIFICATION.md).
+Native integration was last verified against Rex CLI/server **`0.1.0-preview.18`**, API **13**, on macOS. Because Rex is in beta and ships often, Rawr does not pin an exact build: it accepts any local Rex whose API revision is 13 or newer and whose `rex api list` still offers every method, terminal block method, and shell flavor Rawr calls. It checks once per server generation and names anything missing. Remote endpoints remain unsupported. A binary cross-compiling for another OS establishes build compatibility only; see the [public verification summary](VERIFICATION.md).
 
 ## Open the resource panes
 

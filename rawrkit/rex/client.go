@@ -23,6 +23,7 @@ type Client struct {
 	Runner     Runner
 	mu         sync.Mutex
 	instance   string
+	verified   string // instance whose capabilities passed checkCapabilities
 	revisions  map[string]int
 }
 
@@ -116,19 +117,103 @@ func (c *Client) Identity(ctx context.Context) (Identity, error) {
 	if err := c.Run(ctx, []string{"whoami", "--json"}, &i); err != nil {
 		return i, err
 	}
-	if i.Version != TestedVersion {
-		return i, fmt.Errorf("unsupported Rex version %q; tested %s; repeat capability discovery before mutation", i.Version, TestedVersion)
-	}
 	if i.HostID == "" || i.InstanceID == "" || !strings.HasPrefix(i.Endpoint, "unix:") {
 		return i, fmt.Errorf("Rex requires a verified local Unix endpoint and host/generation identity; remote Rex is not supported")
 	}
+	if i.APIRevision < MinAPIRevision {
+		return i, fmt.Errorf("Rex %s has API revision %d; rawr needs %d or newer (verified with %s); update Rex", i.Version, i.APIRevision, MinAPIRevision, TestedVersion)
+	}
+	c.mu.Lock()
+	verified := c.verified == i.InstanceID
+	c.mu.Unlock()
+	if !verified {
+		// Discover once per server generation; a restarted or upgraded
+		// server gets a new instance ID and is checked again.
+		if err := c.checkCapabilities(ctx, i); err != nil {
+			return i, err
+		}
+	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	c.verified = i.InstanceID
 	if c.instance != i.InstanceID {
 		c.instance = i.InstanceID
 		c.revisions = map[string]int{}
 	}
 	return i, nil
+}
+
+// APIListing is the subset of `rex api list --json` that rawrkit checks.
+type APIListing struct {
+	Methods []struct {
+		Name string `json:"name"`
+	} `json:"methods"`
+	BlockTypes []struct {
+		Creator string   `json:"creator"`
+		Flavors []string `json:"flavors"`
+		Methods []struct {
+			Name string `json:"name"`
+		} `json:"methods"`
+	} `json:"block_types"`
+}
+
+// Missing lists the required capabilities the listing lacks.
+func (l APIListing) Missing() []string {
+	have := map[string]bool{}
+	for _, m := range l.Methods {
+		have[m.Name] = true
+	}
+	for _, b := range l.BlockTypes {
+		if b.Creator != TerminalCreator {
+			continue
+		}
+		for _, f := range b.Flavors {
+			have["flavor:"+f] = true
+		}
+		for _, m := range b.Methods {
+			have[TerminalCreator+"."+m.Name] = true
+		}
+	}
+	var missing []string
+	want := append([]string{}, RequiredMethods...)
+	for _, m := range RequiredTerminalMethods {
+		want = append(want, TerminalCreator+"."+m)
+	}
+	want = append(want, "flavor:"+TerminalShellFlavor)
+	for _, name := range want {
+		if !have[name] {
+			missing = append(missing, name)
+		}
+	}
+	return missing
+}
+
+// SupportedAPIListing returns a `rex api list --json` document that offers
+// exactly what rawrkit requires, for fakes that stand in for Rex.
+func SupportedAPIListing() []byte {
+	type named struct {
+		Name string `json:"name"`
+	}
+	var methods, terminal []named
+	for _, m := range RequiredMethods {
+		methods = append(methods, named{m})
+	}
+	for _, m := range RequiredTerminalMethods {
+		terminal = append(terminal, named{m})
+	}
+	b, _ := json.Marshal(map[string]any{"methods": methods, "block_types": []any{map[string]any{"creator": TerminalCreator, "flavors": []string{TerminalShellFlavor}, "methods": terminal}}})
+	return b
+}
+
+func (c *Client) checkCapabilities(ctx context.Context, i Identity) error {
+	var listing APIListing
+	if err := c.Run(ctx, []string{"api", "list", "--json"}, &listing); err != nil {
+		return fmt.Errorf("Rex capability discovery failed: %w", err)
+	}
+	if missing := listing.Missing(); len(missing) > 0 {
+		return fmt.Errorf("Rex %s (API %d) lacks capabilities rawr needs: %s; update rawr or Rex", i.Version, i.APIRevision, strings.Join(missing, ", "))
+	}
+	return nil
 }
 func (c *Client) Sessions(ctx context.Context) ([]Session, error) {
 	var result struct {

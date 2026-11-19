@@ -41,7 +41,7 @@ func newFakeManager(t *testing.T) (*Manager, Context, *fakeNative) {
 			t.Fatal(err)
 		}
 	}
-	i := rex.Identity{HostID: "host", InstanceID: "generation", Version: rex.TestedVersion, Endpoint: "unix:/tmp/rex fake"}
+	i := rex.Identity{HostID: "host", InstanceID: "generation", Version: rex.TestedVersion, APIRevision: rex.MinAPIRevision, Endpoint: "unix:/tmp/rex fake"}
 	f := &fakeNative{t: t, identity: i, blocks: map[string]rex.Block{}, processes: map[string]rex.Process{}, view: rex.View{ID: "session", Revision: 1, ActiveWindowID: "work", Windows: []rex.Window{{ID: "work", FocusedBlockID: "main", Layers: []rex.Layer{{ID: "layer", Kind: "tiled", Layout: &rex.LayoutNode{BlockID: "main"}}}}}}}
 	f.blocks["main"] = rex.Block{ID: "main", Label: "my running editor", HostID: i.HostID, Creator: "com.superlogical.terminal", Flavor: "com.superlogical.terminal.shell"}
 	f.processes["main"] = rex.Process{Child: &rex.ProcessInfo{PID: 100, Path: "/bin/zsh"}, Foreground: &rex.ProcessInfo{PID: 101, Path: "/usr/bin/vim"}}
@@ -90,6 +90,9 @@ func (f *fakeNative) run(_ context.Context, _ string, argv []string) ([]byte, []
 		if arg == "whoami" {
 			f.calls = append(f.calls, "whoami")
 			return encode(f.identity), nil, nil
+		}
+		if arg == "api" && j+1 < len(argv) && argv[j+1] == "list" {
+			return rex.SupportedAPIListing(), nil, nil
 		}
 		if arg == "api" && j+3 < len(argv) && argv[j+1] == "call" && strings.HasPrefix(argv[j+2], rex.TerminalCreator+".") {
 			var request struct {

@@ -40,6 +40,9 @@ func (f *safetyRPC) run(_ context.Context, _ string, args []string) ([]byte, []b
 		f.calls = append(f.calls, "identity")
 		return safetyRaw(f.identity), nil, nil
 	}
+	if safetyArg(args, "api") == "list" {
+		return rex.SupportedAPIListing(), nil, nil
+	}
 	if method := safetyArg(args, "call"); method == rex.TerminalCreator+".process" {
 		var request struct {
 			BlockID string `json:"block_id"`
@@ -118,7 +121,7 @@ func safetyFixture(t *testing.T) (*rex.Client, location, string, map[string]rawr
 	if err := os.MkdirAll(loc.Bin, 0700); err != nil {
 		t.Fatal(err)
 	}
-	f := &safetyRPC{t: t, identity: rex.Identity{HostID: loc.Host, InstanceID: loc.Generation, Version: loc.Version, Endpoint: loc.Endpoint}, blocks: map[string]rex.Block{}, process: map[string]rex.Process{}}
+	f := &safetyRPC{t: t, identity: rex.Identity{HostID: loc.Host, InstanceID: loc.Generation, Version: loc.Version, APIRevision: rex.MinAPIRevision, Endpoint: loc.Endpoint}, blocks: map[string]rex.Block{}, process: map[string]rex.Process{}}
 	bindings := map[string]rawrkit.Binding{}
 	blocks := []rex.Block{{ID: "main", Label: loc.AnchorLabel, HostID: loc.Host}}
 	for i, kind := range fixtureApps {
