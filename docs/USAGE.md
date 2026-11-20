@@ -76,7 +76,7 @@ ghrawr --version
 
 Installing v0.2.1 does not change an existing pane's native launch options; explicitly close the old resource pane in Rex and launch it again once.
 
-`make install PREFIX="$HOME/.local"` installs all four current binaries under `PREFIX/bin`. `make install-compat` also builds/updates the three old command-name entry points; release bundles contain only the current four names. The Go output is separate from the retained Python `bin/rawr` reference. Put `build/bin` or the install directory first in PATH when trying the Go commands.
+`make install PREFIX="$HOME/.local"` installs all four current binaries under `PREFIX/bin`. `make install-compat` also builds/updates the three old command-name entry points; release bundles contain only the current four names. Put `build/bin` or the install directory first in PATH when trying the Go commands.
 
 Use the bundled Rex CLI automatically on macOS, a `rex` executable in PATH, or pass its path explicitly:
 
@@ -220,7 +220,7 @@ Restore preserves existing programs, extra panes, native history tabs and occupi
 
 Go project definitions use `$XDG_CONFIG_HOME/rawr-go` (default `~/.config/rawr-go`); runtime associations use `$XDG_STATE_HOME/rawr-go` (default `~/.local/state/rawr-go`). Apps use shared `$XDG_STATE_HOME/rexapps` state, including when launched by Rawr. Running bare `ghrawr` in a Rawr work shell finds the existing project pane when it resolves to the same project root. `--config-dir` and `--state-dir` override Rawr's project paths. For an isolated app namespace use `rawr --apps-state-dir PATH`; bare tools must use the same `--state-dir PATH`. Keep definitions and runtime mappings together when moving an installation. Saved files contain explicit recipes and layout identities, not terminal output or credentials.
 
-The Go commands preserve the older Python workspace and settings by using separate directories. They do not automatically import Python projects, attach to Python-managed panes, install keybindings or edit Rex's Lua config. A safe legacy importer and a Go shortcut installer remain explicit gaps. Earlier Python source and tests remain as reference material.
+The Go commands preserve the older Python workspace and settings by using separate directories. They do not automatically import Python projects, attach to Python-managed panes, install keybindings or edit Rex's Lua config. A safe legacy importer and a Go shortcut installer remain explicit gaps. The Python implementation has been removed; its on-disk state is left untouched.
 
 Rex's tested isolated server restart retained surfaces and layout but started **fresh shells**. It did not restore programs, scrollback or conversations. The Go pane adapter stops on a changed server generation so it cannot relaunch into those shells. App reopen and machine reboot acceptance remain separate, unverified cases.
 
