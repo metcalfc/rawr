@@ -4,14 +4,14 @@ The commands are now **ghrawr**, **filerawr** and **exerawr**. **Rawr** remains 
 
 The SDK is part of the Go module `github.com/metcalfc/rawr`. Import the subpackages below; it does not require a separate module.
 
-**Version scope:** this guide describes **v0.2.1**, including `rex.AppLeaf` close-on-exit, `RunLocalAction`, the status/document helpers and the file/PR resource workflows. The [main demo](../assets/demo.gif) captures the real Rex GUI: bare commands open the three native resource panes, then `q` closes each while the original shell survives. It was recorded with development build `fd98579` before v0.2.1. Its providers are fixtures; no central file opening, checkout, browser action or SSH connection is shown. The [optional standalone VHS tour](https://github.com/metcalfc/rawr/blob/main/assets/standalone-demo.gif) is separate. See [capture methods](https://github.com/metcalfc/rawr/tree/main/demos) and [verification](VERIFICATION.md) for their scope.
+**Version scope:** this guide describes **v0.3.0**, including `ui.StatusReporter` program status, capability-based Rex checks, `rex.AppLeaf` close-on-exit, `RunLocalAction`, the status/document helpers and the file/PR resource workflows. The [main demo](../assets/demo.gif) captures the real Rex GUI: bare commands open the three native resource panes, then `q` closes each while the original shell survives. It was recorded with development build `fd98579` before v0.3.0. Its providers are fixtures; no central file opening, checkout, browser action or SSH connection is shown. The [optional standalone VHS tour](https://github.com/metcalfc/rawr/blob/main/assets/standalone-demo.gif) is separate. See [capture methods](https://github.com/metcalfc/rawr/tree/main/demos) and [verification](VERIFICATION.md) for their scope.
 
-v0.2.1 includes close-on-exit for newly hosted resource apps. Existing panes retain their launch options until explicitly closed and recreated; the older v0.2.0 tag and archives are unchanged.
+Since v0.2.1, newly hosted resource apps close on exit. Existing panes retain their launch options until explicitly closed and recreated; the older v0.2.0 tag and archives are unchanged.
 
 In your own Go module, pin the SDK with:
 
 ```sh
-go get github.com/metcalfc/rawr@v0.2.1
+go get github.com/metcalfc/rawr@v0.3.0
 ```
 
 | Import | Purpose |
@@ -24,7 +24,7 @@ All public SDK types are importable by another Go module. Applications do not ne
 
 ## Resource selection drives work
 
-An app owns its resource list, selection, details and explicit actions. Browsing with arrows or mouse selection does not execute the resource. In the v0.2.1 apps, files/diffs activate read-only work in the center, VM connect actions activate an SSH terminal, and a PR checkout is a separately confirmed local repository action. GitHub browser/check details remain named actions of that pane.
+An app owns its resource list, selection, details and explicit actions. Browsing with arrows or mouse selection does not execute the resource. In the v0.3.0 apps, files/diffs activate read-only work in the center, VM connect actions activate an SSH terminal, and a PR checkout is a separately confirmed local repository action. GitHub browser/check details remain named actions of that pane.
 
 Use `ActivateTerminal` for a declared central view/program and retain previous work in native history tabs. The opened or reused target receives focus. Keep the app's root/scope anchored while focus changes; a remote shell or a different checkout in another pane must not silently retarget its resource list.
 
@@ -71,7 +71,7 @@ func Open(ctx context.Context, root, stateDir, appBinary string) error {
 
 The native launch appends **`--tui --context-file PATH`** to the registered command. The executable must implement those flags, read the explicit JSON with `rawrkit.ReadContext(path)` and render its UI in that new terminal. The helper rejects unknown fields, trailing data and oversized documents. The context contains root/scope/session/anchor/connection identifiers, not terminal output or an environment snapshot. Run/open returns to the caller while Rex hosts the app process. A generic arbitrary executable that does not implement this launch contract is not automatically a pane app.
 
-The complete [noterawr example](../examples/noterawr/main.go) implements this contract with only public SDK imports, tcell and the standard library. From the [v0.2.1 source checkout](https://github.com/metcalfc/rawr/tree/v0.2.1):
+The complete [noterawr example](../examples/noterawr/main.go) implements this contract with only public SDK imports, tcell and the standard library. From the [v0.3.0 source checkout](https://github.com/metcalfc/rawr/tree/v0.3.0):
 
 ```sh
 go build -o build/bin/noterawr ./examples/noterawr
@@ -85,7 +85,7 @@ It is an example app, rather than a fifth default release executable. Its source
 
 Use the same canonical root, session, scope and state directory for apps sharing a workspace. `Open` opens/focuses, `Hide` detaches the surface while keeping its process, `Toggle` hides/shows and `Snapshot` inspects bindings/visibility. A running app is reused through its recorded native identity and process fingerprint. Changed, occupied or ambiguous work is preserved and reported, with interrupted operations retained in a journal.
 
-In v0.2.1, managed resource launches use `rex.AppLeaf`, which sets Rex's `exit.on_completion=true`. The default 250 ms quick-exit guard is retained so quick launch failures stay visible. Rex removes the owned resource pane after the app exits; the built-in `q`/Escape controls first leave details/help, then quit. `Hide`/`Toggle` keep the process running. Generic `rex.Leaf` terminals for local work, SSH and file viewers retain surfaces on exit. Standalone `--tui` only returns control to its hosting terminal.
+Since v0.2.1, managed resource launches use `rex.AppLeaf`, which sets Rex's `exit.on_completion=true`. The default 250 ms quick-exit guard is retained so quick launch failures stay visible. Rex removes the owned resource pane after the app exits; the built-in `q`/Escape controls first leave details/help, then quit. `Hide`/`Toggle` keep the process running. Generic `rex.Leaf` terminals for local work, SSH and file viewers retain surfaces on exit. Standalone `--tui` only returns control to its hosting terminal.
 
 Launch options are not changed on already-running panes: no runtime setter is verified. Explicitly close/recreate an old resource pane once to use the new behavior. Rawr's new initial/open/restore resource panes use it too, while live panes and working terminals are preserved.
 
@@ -136,7 +136,7 @@ New default builds/installations and `rawr-apps_VERSION_OS_ARCH` release bundles
 
 Running processes retain their original UI code. Installation does not hot-reload or restart them; explicitly closing/reopening an app loads the new executable. Apps retain the shared `rexapps` state directory so a command rename does not silently abandon known native surfaces. Compatibility checks verified in-memory recipe/binding aliases, running-program reuse, and open/plan preserving native surfaces, geometry and saved definition bytes. This compatibility applies to the earlier Go state; Python projects remain separate.
 
-The three built-in v0.2.1 app commands are silent after successful pane actions. `--verbose`/`-v` prints their result JSON; `--status` always prints JSON. Rawr's optional project subcommands keep structured output. This is a built-in CLI policy, not output that the SDK forces on another app; noterawr and other consumers own their command interfaces.
+The three built-in v0.3.0 app commands are silent after successful pane actions. `--verbose`/`-v` prints their result JSON; `--status` always prints JSON. Rawr's optional project subcommands keep structured output. This is a built-in CLI policy, not output that the SDK forces on another app; noterawr and other consumers own their command interfaces.
 
 The [public verification summary](VERIFICATION.md) records current coverage and limits. The earlier Python implementation has been removed; the public summary excludes local machine identifiers and raw terminal/session captures.
 
@@ -153,7 +153,7 @@ go test -race ./...
 make release VERSION=dev
 ```
 
-The [external SDK smoke program](https://github.com/metcalfc/rawr/tree/v0.2.1/scripts/sdk-smoke) creates a separate temporary Go module with a local `replace` to this checkout. Its consumer imports only public rawrkit/ui/rex packages plus tcell, verifies a custom `sdk-notes` app/alias unrelated to the built-in names, round-trips explicit context through the public reader, type-checks the native launch/terminal APIs, and runs shared canvas/list selection on a simulation screen. It does not connect to Rex or mutate projects.
+The [external SDK smoke program](https://github.com/metcalfc/rawr/tree/v0.3.0/scripts/sdk-smoke) creates a separate temporary Go module with a local `replace` to this checkout. Its consumer imports only public rawrkit/ui/rex packages plus tcell, verifies a custom `sdk-notes` app/alias unrelated to the built-in names, round-trips explicit context through the public reader, type-checks the native launch/terminal APIs, and runs shared canvas/list selection on a simulation screen. It does not connect to Rex or mutate projects.
 
 For a complete compile matrix of that external consumer:
 

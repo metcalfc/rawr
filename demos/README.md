@@ -6,7 +6,7 @@ The animation contains 14 timed GUI keyframes over 20.36 seconds (1,234,900 byte
 
 ## Reproduce the native capture
 
-Use the verified Rex version with a connected GUI client and turn Autobalance splits off for deliberate pane dimensions. Use the [v0.2.1 source checkout](https://github.com/metcalfc/rawr/tree/v0.2.1) to build apps and the [fixture setup helper](https://github.com/metcalfc/rawr/tree/v0.2.1/scripts/acceptance-native-demo). The original capture used development source `fd98579`; v0.2.1 provides the same open/quit behavior:
+Use the verified Rex version with a connected GUI client and turn Autobalance splits off for deliberate pane dimensions. Use the [v0.3.0 source checkout](https://github.com/metcalfc/rawr/tree/v0.3.0) to build apps and the [fixture setup helper](https://github.com/metcalfc/rawr/tree/v0.3.0/scripts/acceptance-native-demo). The original capture used development source `fd98579`; v0.3.0 provides the same open/quit behavior:
 
 ```sh
 make build
@@ -20,7 +20,7 @@ go build -o .acceptance/native-demo/helper ./scripts/acceptance-native-demo
   --manifest .acceptance/native-demo/location.json
 ```
 
-Replace the connected Rex client label for your machine. Setup creates one shell in a disposable fixture project. Its journal refuses duplicate setup; it does not close or reload existing work. The local manifest keeps native identifiers under ignored `.acceptance/`. Newly launched v0.2.1 resource panes use close-on-exit; an already-running pane retains its original launch options.
+Replace the connected Rex client label for your machine. Setup creates one shell in a disposable fixture project. Its journal refuses duplicate setup; it does not close or reload existing work. The local manifest keeps native identifiers under ignored `.acceptance/`. Newly launched v0.3.0 resource panes use close-on-exit; an already-running pane retains its original launch options.
 
 1. Type `ghrawr` in the work terminal and capture its native pane opening.
 2. Return focus to the same terminal, type `filerawr`, and capture its pane opening.
@@ -35,7 +35,7 @@ Replace the connected Rex client label for your machine. Setup creates one shell
 
 The encoder uses ffmpeg's concat input and `palettegen`/`paletteuse` filters and writes `assets/demo.gif` by default. Frame holds set the animation's pacing.
 
-This capture requires the actual Rex application and GUI interaction. The optional VHS runner below records a separate standalone terminal tour. The [v0.2.1 recorder source](https://github.com/metcalfc/rawr/tree/v0.2.1/demos) includes this open/quit tour. The older v0.2.0 tag and archives remain unchanged.
+This capture requires the actual Rex application and GUI interaction. The optional VHS runner below records a separate standalone terminal tour. The [v0.3.0 recorder source](https://github.com/metcalfc/rawr/tree/v0.3.0/demos) includes this open/quit tour. The older v0.2.0 tag and archives remain unchanged.
 
 ## Optional standalone VHS tour
 

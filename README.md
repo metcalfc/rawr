@@ -22,13 +22,13 @@ The optional `rawr` command manages projects and saved setups.
 
 ## Install
 
-[Download v0.2.1 for macOS/Linux](https://github.com/metcalfc/rawr/releases/tag/v0.2.1), or install with Go 1.24+:
+[Download v0.3.0 for macOS/Linux](https://github.com/metcalfc/rawr/releases/tag/v0.3.0), or install with Go 1.24+:
 
 ```sh
-go install github.com/metcalfc/rawr/cmd/ghrawr@v0.2.1
-go install github.com/metcalfc/rawr/cmd/filerawr@v0.2.1
-go install github.com/metcalfc/rawr/cmd/exerawr@v0.2.1
-go install github.com/metcalfc/rawr/cmd/rawr@v0.2.1 # optional
+go install github.com/metcalfc/rawr/cmd/ghrawr@v0.3.0
+go install github.com/metcalfc/rawr/cmd/filerawr@v0.3.0
+go install github.com/metcalfc/rawr/cmd/exerawr@v0.3.0
+go install github.com/metcalfc/rawr/cmd/rawr@v0.3.0 # optional
 ```
 
 See the [setup and usage guide](docs/USAGE.md) for Rex compatibility and dependencies.
@@ -38,5 +38,5 @@ See the [setup and usage guide](docs/USAGE.md) for Rex compatibility and depende
 Use [rawrkit](docs/RAWRKIT.md) for shared pane behavior and terminal UI. Start with the [noterawr example](examples/noterawr/main.go) and replace its resources and actions.
 
 ```sh
-go get github.com/metcalfc/rawr@v0.2.1
+go get github.com/metcalfc/rawr@v0.3.0
 ```
